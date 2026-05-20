@@ -12,9 +12,7 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "ios": {
-      "supportsTablet": true
-    },
+    "ios": { "supportsTablet": true },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/logo2.png",
@@ -23,8 +21,11 @@
       "edgeToEdgeEnabled": true,
       "package": "com.amm.connect"
     },
-    "web": {
-      "favicon": "./assets/logo2.png"
+    "web": { "favicon": "./assets/logo2.png" },
+    "extra": {
+      "eas": {
+        "projectId": "86f067d9-cf09-4cbf-8509-b1156d247368"
+      }
     }
   }
 }
