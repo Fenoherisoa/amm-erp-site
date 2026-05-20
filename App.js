@@ -918,7 +918,7 @@ export default function App() {
 }
 
 // ==========================================
-// STYLES MATIHANINA
+// STYLES MATIHANINA VOADIO (KIDIA MAINTY NY SORATRA REHETRA)
 // ==========================================
 const styles = StyleSheet.create({
   containerSplash: { flex: 1, backgroundColor: '#0d1b2a', justifyContent: 'center', alignItems: 'center' },
@@ -934,7 +934,10 @@ const styles = StyleSheet.create({
   loginSubtitle: { fontSize: 12, color: '#666', marginBottom: 20, marginTop: 5 },
   inputContainer: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#ccc', borderRadius: 8, paddingHorizontal: 10, marginVertical: 8, height: 50, width: '100%' },
   inputIcon: { marginRight: 10 },
-  inputField: { flex: 1, height: '100%', fontSize: 15 },
+  
+  // AHITSY 1: Terena ho mainty ny soratra soratana eo amin'ny Login
+  inputField: { flex: 1, height: '100%', fontSize: 15, color: '#000000' },
+  
   btnLogin: { backgroundColor: '#0d3373', width: '100%', height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center', marginTop: 15 },
   btnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
   loginDate: { marginTop: 15, fontSize: 11, color: '#aaa' },
@@ -959,7 +962,10 @@ const styles = StyleSheet.create({
   modalCard: { backgroundColor: '#fff', width: '88%', padding: 20, borderRadius: 15, elevation: 5 },
   modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10, color: '#0047b3' },
   formMiniTitle: { fontSize: 13, fontWeight: 'bold', color: '#ff9900', marginTop: 14, textTransform: 'uppercase' },
-  modalInput: { borderBottomWidth: 1, borderBottomColor: '#ccc', paddingVertical: 8, fontSize: 15, marginVertical: 5 },
+  
+  // AHITSY 2: Terena ho mainty ny soratra ao amin'ny Input-n'ny Form (Anarana, Fanampiny, sns)
+  modalInput: { borderBottomWidth: 1, borderBottomColor: '#ccc', paddingVertical: 8, fontSize: 15, marginVertical: 5, color: '#000000' },
+  
   dropdownSelector: { borderBottomWidth: 1, borderBottomColor: '#ccc', paddingVertical: 12, marginVertical: 5, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   switchContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 10 },
   modalButtons: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 20 },
@@ -967,7 +973,10 @@ const styles = StyleSheet.create({
   btnRaised: { backgroundColor: '#0047b3', paddingVertical: 10, paddingHorizontal: 15, borderRadius: 5 },
   dropdownContainer: { backgroundColor: '#fff', width: '85%', borderRadius: 12, padding: 15, elevation: 5 },
   dropdownContainerScroll: { backgroundColor: '#fff', width: '75%', maxHeight: 300, borderRadius: 10, padding: 10, elevation: 5 },
-  dropdownItem: { paddingVertical: 14, paddingHorizontal: 15, borderBottomWidth: 0.5, borderBottomColor: '#eee' },
+  
+  // AHITSY 3: Terena ho mainty ny soratra ao anatin'ny latsak'alina (Dropdown Item)
+  dropdownItem: { paddingVertical: 14, paddingHorizontal: 15, borderBottomWidth: 0.5, borderBottomColor: '#eee', color: '#000000' },
+  
   rowCenter: { flexDirection: 'row', alignItems: 'center' },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }
 });
