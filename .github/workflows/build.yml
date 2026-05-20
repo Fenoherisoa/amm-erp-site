@@ -28,4 +28,4 @@ jobs:
           EXPO_TOKEN: "hhyJupdt76HX9va1sL2HAQGSA_NBhp4D8T0Q6dtF"
         run: |
           eas project:init --force
-          eas build --platform android --profile preview --non-interactive
+          eas build --platform android --profile preview --non-interactive --auto-credentials
