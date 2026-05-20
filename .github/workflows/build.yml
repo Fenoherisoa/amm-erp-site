@@ -26,4 +26,4 @@ jobs:
       - name: Build APK en Ligne
         run: |
           eas login --username "${{ secrets.EXPO_USERNAME }}" --password "${{ secrets.EXPO_PASSWORD }}"
-          eas build --platform android --profile preview --non-interactive
+          eas build --platform android --profile preview --non-interactive --no-auto-submit
