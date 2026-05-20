@@ -4,23 +4,23 @@
     "slug": "amm-connect",
     "version": "1.2.0",
     "orientation": "portrait",
-    "icon": "./logo.png",
+    "icon": "https://picsum.photos/200",
     "userInterfaceStyle": "light",
     "newArchEnabled": false,
     "splash": {
-      "image": "./logo.png",
+      "image": "https://picsum.photos/200",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": { "supportsTablet": true },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./logo2.png",
+        "foregroundImage": "https://picsum.photos/200",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.amm.connect"
     },
-    "web": { "favicon": "./logo2.png" }
+    "web": { "favicon": "https://picsum.photos/200" }
   }
 }
