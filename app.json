@@ -21,11 +21,6 @@
       "edgeToEdgeEnabled": true,
       "package": "com.amm.connect"
     },
-    "web": { "favicon": "./assets/logo2.png" },
-    "extra": {
-      "eas": {
-        "projectId": "73e925d3-82ef-457f-bdc1-4b130e5f2a13"
-      }
-    }
+    "web": { "favicon": "./assets/logo2.png" }
   }
 }
