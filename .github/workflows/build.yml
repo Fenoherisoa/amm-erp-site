@@ -29,14 +29,21 @@ jobs:
           EAS_NO_VCS: "1"
         run: |
           eas project:init --force
-          # Mamorona Keystore tsotra ho an'ny Android eo an-toerana mba tsy hangatahan'ny Expo fanontaniana
+          
+          # 1. Mamorona Keystore eo an-toerana
           keytool -genkey -v -keystore release-key.keystore -alias my-key-alias -keyalg RSA -keysize 2048 -validity 10000 -storepass "diasofiditray" -keypass "diasofiditray" -dname "CN=AMM, OU=AMM, O=AMM, L=Arivonimamo, S=Analamanga, C=MG"
           
-          # Tenenina ny Expo mba hampiasa an'io Keystore vao namboarina io
-          export APP_ENV_ANDROID_KEYSTORE_PATH="release-key.keystore"
-          export APP_ENV_ANDROID_KEYSTORE_PASSWORD="diasofiditray"
-          export APP_ENV_ANDROID_KEY_ALIAS="my-key-alias"
-          export APP_ENV_ANDROID_KEY_PASSWORD="diasofiditray"
+          # 2. Mamorona credentials.json mba hanerena ny EAS hampiasa ny Keystore eo an-toerana
+          echo '{
+            "android": {
+              "keystore": {
+                "keystorePath": "release-key.keystore",
+                "keystorePassword": "diasofiditray",
+                "keyAlias": "my-key-alias",
+                "keyPassword": "diasofiditray"
+              }
+            }
+          }' > credentials.json
           
-          # Mandefa ny build amin'izay
+          # 3. Mandefa ny build mivantana
           eas build --platform android --profile preview --non-interactive
