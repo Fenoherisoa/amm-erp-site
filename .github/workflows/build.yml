@@ -24,6 +24,9 @@ jobs:
         run: npm install
 
       - name: Build APK en Ligne
+        env:
+          EXPO_TOKEN: "" # Tsy mila token satria mampiasa ny fidirana etsy ambany
+          EXPO_CLI_USERNAME: "Fenoherisoa"
+          EXPO_CLI_PASSWORD: "2241510Feno$"
         run: |
-          eas login --username "Fenoherisoa" --password "2241510Feno$"
           eas build --platform android --profile preview --non-interactive --no-auto-submit
