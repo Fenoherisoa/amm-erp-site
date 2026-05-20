@@ -29,7 +29,14 @@ jobs:
           EAS_NO_VCS: "1"
         run: |
           eas project:init --force
-          # Ity baiko ity dia hiteraka ny Android Keystore ho azy any amin'ny server nefa tsy mametraka fanontaniana
-          eas credentials --platform android --profile preview --non-interactive || true
-          # Rehefa vonona izany dia mandeha amin'izay ilay build tsotra
+          # Mamorona Keystore tsotra ho an'ny Android eo an-toerana mba tsy hangatahan'ny Expo fanontaniana
+          keytool -genkey -v -keystore release-key.keystore -alias my-key-alias -keyalg RSA -keysize 2048 -validity 10000 -storepass "diasofiditray" -keypass "diasofiditray" -dname "CN=AMM, OU=AMM, O=AMM, L=Arivonimamo, S=Analamanga, C=MG"
+          
+          # Tenenina ny Expo mba hampiasa an'io Keystore vao namboarina io
+          export APP_ENV_ANDROID_KEYSTORE_PATH="release-key.keystore"
+          export APP_ENV_ANDROID_KEYSTORE_PASSWORD="diasofiditray"
+          export APP_ENV_ANDROID_KEY_ALIAS="my-key-alias"
+          export APP_ENV_ANDROID_KEY_PASSWORD="diasofiditray"
+          
+          # Mandefa ny build amin'izay
           eas build --platform android --profile preview --non-interactive
