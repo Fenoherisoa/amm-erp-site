@@ -20,7 +20,8 @@
         "foregroundImage": "./assets/logo2.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.amm.connect"
     },
     "web": {
       "favicon": "./assets/logo2.png"
