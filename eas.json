@@ -16,5 +16,8 @@
     "production": {
       "distribution": "store"
     }
+  },
+  "submit": {
+    "production": {}
   }
 }
