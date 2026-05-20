@@ -4,23 +4,23 @@
     "slug": "amm-connect",
     "version": "1.2.0",
     "orientation": "portrait",
-    "icon": "./assets/logo.png",
+    "icon": "./logo.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": false,
     "splash": {
-      "image": "./assets/logo.png",
+      "image": "./logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": { "supportsTablet": true },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/logo2.png",
+        "foregroundImage": "./logo2.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.amm.connect"
     },
-    "web": { "favicon": "./assets/logo2.png" }
+    "web": { "favicon": "./logo2.png" }
   }
 }
