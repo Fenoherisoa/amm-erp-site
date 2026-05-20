@@ -29,4 +29,5 @@ jobs:
           EAS_NO_VCS: "1"
         run: |
           eas project:init --force
+          eas credentials:setup --platform android --profile preview --non-interactive
           eas build --platform android --profile preview --non-interactive
