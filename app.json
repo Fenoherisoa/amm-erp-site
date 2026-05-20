@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "AMM CONNECT 2",
-    "slug": "snack-ae7a7871-c3c2-4011-b739-ea526dd78ed3",
+    "slug": "amm-connect",
     "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/logo.png",
@@ -24,7 +24,7 @@
     "web": { "favicon": "./assets/logo2.png" },
     "extra": {
       "eas": {
-        "projectId": "86f067d9-cf09-4cbf-8509-b1156d247368"
+        "projectId": "73e925d3-82ef-457f-bdc1-4b130e5f2a13"
       }
     }
   }
