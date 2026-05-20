@@ -25,7 +25,6 @@ jobs:
 
       - name: Build APK en Ligne
         env:
-          EXPO_CLI_USERNAME: "Fenoherisoa"
-          EXPO_CLI_PASSWORD: "2241510Feno$"
+          EXPO_TOKEN: "hhyJupdt76HX9va1sL2HAQGSA_NBhp4D8T0Q6dtF"
         run: |
           eas build --platform android --profile preview --non-interactive
