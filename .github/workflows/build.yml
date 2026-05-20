@@ -33,7 +33,7 @@ jobs:
           # 1. Mamorona Keystore eo an-toerana
           keytool -genkey -v -keystore release-key.keystore -alias my-key-alias -keyalg RSA -keysize 2048 -validity 10000 -storepass "diasofiditray" -keypass "diasofiditray" -dname "CN=AMM, OU=AMM, O=AMM, L=Arivonimamo, S=Analamanga, C=MG"
           
-          # 2. Mamorona credentials.json mba hanerena ny EAS hampiasa ny Keystore eo an-toerana
+          # 2. Mamorona credentials.json
           echo '{
             "android": {
               "keystore": {
@@ -45,5 +45,8 @@ jobs:
             }
           }' > credentials.json
           
-          # 3. Mandefa ny build mivantana
+          # 3. Manadio ny prebuild mialoha mba tsy hisian'ny diso any ambadika
+          npx expo prebuild --clean --platform android
+          
+          # 4. Mandefa ny build mivantana
           eas build --platform android --profile preview --non-interactive
