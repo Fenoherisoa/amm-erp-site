@@ -4,23 +4,26 @@
     "slug": "amm-connect",
     "version": "1.2.0",
     "orientation": "portrait",
-    "icon": "https://picsum.photos/200",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "splash": {
-      "image": "https://picsum.photos/200",
+      "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "ios": { "supportsTablet": true },
+    "ios": {
+      "supportsTablet": true
+    },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "https://picsum.photos/200",
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
-      "package": "com.amm.connect"
+      "edgeToEdgeEnabled": true
     },
-    "web": { "favicon": "https://picsum.photos/200" }
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
   }
 }
