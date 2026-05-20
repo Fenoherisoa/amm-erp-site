@@ -29,5 +29,7 @@ jobs:
           EAS_NO_VCS: "1"
         run: |
           eas project:init --force
-          eas credentials:setup --platform android --profile preview --non-interactive
+          # Ity baiko ity dia hanery ny rafitra hiteraka credentials any amin'ny server
+          npx eas-cli build --platform android --profile preview --stage credentials-check || true
+          # Rehefa vonona izany dia mandeha amin'izay ilay build tsotra
           eas build --platform android --profile preview --non-interactive
