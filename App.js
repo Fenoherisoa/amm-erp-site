@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, 
-  ActivityIndicator, Image, Animated, Alert, Dimensions, Modal, Switch
+  ActivityIndicator, Image, Animated, Alert, Dimensions, Modal, Switch,
+  KeyboardAvoidingView, Platform, StatusBar // Nampiana KeyboardAvoidingView sy Platform ary StatusBar
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { madagascarData } from './madagascarData'; 
@@ -453,6 +454,7 @@ export default function App() {
   if (currentScreen === "splash") {
     return (
       <View style={styles.containerSplash}>
+        <StatusBar barStyle="light-content" backgroundColor="#0d1b2a" />
         <Animated.Image 
           source={require('./assets/logo2.png')} 
           style={[styles.splashLogo, { opacity: fadeLogo }]} 
@@ -470,94 +472,109 @@ export default function App() {
   // --- B. LOGIN SCREEN ---
   if (currentScreen === "login") {
     return (
-      <View style={styles.containerLogin}>
-        <View style={styles.haingoCircle} />
-        
-        <View style={styles.cardLogin}>
-          <Image 
-            source={require('./assets/logo.png')} 
-            style={styles.loginLogo} 
-          />
-          <Text style={styles.loginTitle}>AMM CONNECT</Text>
-          <Text style={styles.loginSubtitle}>Association Malagasy Miray</Text>
+      <KeyboardAvoidingView 
+        style={{ flex: 1 }} 
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <View style={styles.containerLogin}>
+          <StatusBar barStyle="dark-content" backgroundColor="#ebf0f5" />
+          <View style={styles.haingoCircle} />
+          
+          <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center' }} showsVerticalScrollIndicator={false}>
+            <View style={styles.cardLogin}>
+              <Image 
+                source={require('./assets/logo.png')} 
+                style={styles.loginLogo} 
+              />
+              <Text style={styles.loginTitle}>AMM CONNECT</Text>
+              <Text style={styles.loginSubtitle}>Association Malagasy Miray</Text>
 
-          <View style={styles.inputContainer}>
-            <MaterialCommunityIcons name="account-circle-outline" size={24} color="#666" style={styles.inputIcon} />
-            <TextInput 
-              style={styles.inputField} 
-              placeholder="Anaran'ny mpampiasa"
-              placeholderTextColor="#888"
-              value={username}
-              onChangeText={setUsername}
-              autoCapitalize="none"
-            />
-          </View>
+              <View style={styles.inputContainer}>
+                <MaterialCommunityIcons name="account-circle-outline" size={24} color="#666" style={styles.inputIcon} />
+                <TextInput 
+                  style={styles.inputField} 
+                  placeholder="Anaran'ny mpampiasa"
+                  placeholderTextColor="#888"
+                  value={username}
+                  onChangeText={setUsername}
+                  autoCapitalize="none"
+                />
+              </View>
 
-          <View style={styles.inputContainer}>
-            <MaterialCommunityIcons name="lock-outline" size={24} color="#666" style={styles.inputIcon} />
-            <TextInput 
-              style={styles.inputField} 
-              placeholder="Teny miafina"
-              placeholderTextColor="#888"
-              secureTextEntry={!showPassword}
-              value={password}
-              onChangeText={setPassword}
-            />
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-              <MaterialCommunityIcons name={showPassword ? "eye-outline" : "eye-off-outline"} size={24} color="#666" />
-            </TouchableOpacity>
-          </View>
+              <View style={styles.inputContainer}>
+                <MaterialCommunityIcons name="lock-outline" size={24} color="#666" style={styles.inputIcon} />
+                <TextInput 
+                  style={styles.inputField} 
+                  placeholder="Teny miafina"
+                  placeholderTextColor="#888"
+                  secureTextEntry={!showPassword}
+                  value={password}
+                  onChangeText={setPassword}
+                />
+                <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                  <MaterialCommunityIcons name={showPassword ? "eye-outline" : "eye-off-outline"} size={24} color="#666" />
+                </TouchableOpacity>
+              </View>
 
-          {isLoading && <ActivityIndicator size="small" color="#0d3373" style={{ marginVertical: 10 }} />}
+              {isLoading && <ActivityIndicator size="small" color="#0d3373" style={{ marginVertical: 10 }} />}
 
-          <TouchableOpacity style={styles.btnLogin} onPress={handleVerifyLogin} disabled={isLoading}>
-            <Text style={styles.btnText}>HIDITRA</Text>
-          </TouchableOpacity>
+              <TouchableOpacity style={styles.btnLogin} onPress={handleVerifyLogin} disabled={isLoading}>
+                <Text style={styles.btnText}>HIDITRA</Text>
+              </TouchableOpacity>
 
-          <TouchableOpacity style={{ marginTop: 15 }} onPress={() => setCurrentScreen("register")}>
-            <Text style={{ color: '#0d3373', fontWeight: '500' }}>Tsy manana kaonty? Misoratra anarana</Text>
-          </TouchableOpacity>
+              <TouchableOpacity style={{ marginTop: 15 }} onPress={() => setCurrentScreen("register")}>
+                <Text style={{ color: '#0d3373', fontWeight: '500' }}>Tsy manana kaonty? Misoratra anarana</Text>
+              </TouchableOpacity>
 
-          <Text style={styles.loginDate}>Mise à jour: 20 mai 2026</Text>
+              <Text style={styles.loginDate}>Mise à jour: 20 mai 2026</Text>
+            </View>
+            <Text style={styles.sonia}>© 2026 RFC _ R.Digitale AMM</Text>
+          </ScrollView>
         </View>
-        <Text style={styles.sonia}>© 2026 RFC _ R.Digitale AMM</Text>
-      </View>
+      </KeyboardAvoidingView>
     );
   }
 
   // --- C. REGISTER SCREEN ---
   if (currentScreen === "register") {
     return (
-      <View style={styles.containerLogin}>
-        <View style={styles.cardLogin}>
-          <Text style={[styles.loginTitle, { marginBottom: 20, color: '#333' }]}>Fisoratana Anarana Vaovao</Text>
+      <KeyboardAvoidingView 
+        style={{ flex: 1 }} 
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <View style={styles.containerLogin}>
+          <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center' }} showsVerticalScrollIndicator={false}>
+            <View style={styles.cardLogin}>
+              <Text style={[styles.loginTitle, { marginBottom: 20, color: '#333' }]}>Fisoratana Anarana Vaovao</Text>
 
-          <View style={styles.inputContainer}>
-            <MaterialCommunityIcons name="account-plus-outline" size={24} color="#666" style={styles.inputIcon} />
-            <TextInput style={styles.inputField} placeholder="Username vaovao" placeholderTextColor="#888" value={regUsername} onChangeText={setRegUsername} autoCapitalize="none" />
-          </View>
+              <View style={styles.inputContainer}>
+                <MaterialCommunityIcons name="account-plus-outline" size={24} color="#666" style={styles.inputIcon} />
+                <TextInput style={styles.inputField} placeholder="Username vaovao" placeholderTextColor="#888" value={regUsername} onChangeText={setRegUsername} autoCapitalize="none" />
+              </View>
 
-          <View style={styles.inputContainer}>
-            <MaterialCommunityIcons name="lock-plus-outline" size={24} color="#666" style={styles.inputIcon} />
-            <TextInput style={styles.inputField} placeholder="Password vaovao" placeholderTextColor="#888" secureTextEntry={true} value={regPassword} onChangeText={setRegPassword} />
-          </View>
+              <View style={styles.inputContainer}>
+                <MaterialCommunityIcons name="lock-plus-outline" size={24} color="#666" style={styles.inputIcon} />
+                <TextInput style={styles.inputField} placeholder="Password vaovao" placeholderTextColor="#888" secureTextEntry={true} value={regPassword} onChangeText={setRegPassword} />
+              </View>
 
-          <View style={styles.inputContainer}>
-            <MaterialCommunityIcons name="key-outline" size={24} color="#666" style={styles.inputIcon} />
-            <TextInput style={styles.inputField} placeholder="Token nomen'ny Admin (6 litera)" placeholderTextColor="#888" value={regToken} onChangeText={setRegToken} />
-          </View>
+              <View style={styles.inputContainer}>
+                <MaterialCommunityIcons name="key-outline" size={24} color="#666" style={styles.inputIcon} />
+                <TextInput style={styles.inputField} placeholder="Token nomen'ny Admin (6 litera)" placeholderTextColor="#888" value={regToken} onChangeText={setRegToken} />
+              </View>
 
-          {isLoading && <ActivityIndicator size="small" color="#00cc66" style={{ marginVertical: 10 }} />}
+              {isLoading && <ActivityIndicator size="small" color="#00cc66" style={{ marginVertical: 10 }} />}
 
-          <TouchableOpacity style={[styles.btnLogin, { backgroundColor: '#00cc66' }]} onPress={handleRegister} disabled={isLoading}>
-            <Text style={styles.btnText}>HAFORONA NY KAONTY</Text>
-          </TouchableOpacity>
+              <TouchableOpacity style={[styles.btnLogin, { backgroundColor: '#00cc66' }]} onPress={handleRegister} disabled={isLoading}>
+                <Text style={styles.btnText}>HAFORONA NY KAONTY</Text>
+              </TouchableOpacity>
 
-          <TouchableOpacity style={{ marginTop: 15 }} onPress={() => setCurrentScreen("login")}>
-            <Text style={{ color: '#666', fontWeight: '500' }}>Hiverina hiditra</Text>
-          </TouchableOpacity>
+              <TouchableOpacity style={{ marginTop: 15 }} onPress={() => setCurrentScreen("login")}>
+                <Text style={{ color: '#666', fontWeight: '500' }}>Hiverina hiditra</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     );
   }
 
@@ -565,6 +582,7 @@ export default function App() {
   if (currentScreen === "main") {
     return (
       <View style={styles.containerMain}>
+        <StatusBar barStyle="light-content" backgroundColor="#0047b3" />
         <View style={styles.appBar}>
           <Text style={styles.appBarTitle}>AMM - Fikarohana</Text>
           <View style={styles.appBarActions}>
@@ -634,156 +652,166 @@ export default function App() {
         {/* ================= MODAL ADD PERSON ================= */}
         <Modal visible={modalAddPerson} animationType="slide" transparent={true}>
           <View style={styles.modalCentered}>
-            <View style={[styles.modalCard, { maxHeight: '90%' }]}>
-              <Text style={styles.modalTitle}>Enquête sur Terrain feno</Text>
-              
-              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
-                <Text style={styles.formMiniTitle}>Momba ny olona sy ny Tetikasa</Text>
-                <TextInput style={styles.modalInput} placeholder="Anarana feno" placeholderTextColor="#888" value={newAnarana} onChangeText={setNewAnarana} />
+            <KeyboardAvoidingView 
+              style={{ width: '100%', alignItems: 'center' }}
+              behavior={Platform.OS === "ios" ? "padding" : "height"}
+            >
+              <View style={[styles.modalCard, { maxHeight: '90%' }]}>
+                <Text style={styles.modalTitle}>Enquête sur Terrain feno</Text>
                 
-                <TouchableOpacity style={styles.dropdownSelector} onPress={() => openGenericDropdown("tetikasa")}>
-                  <Text style={{ color: '#000000', fontSize: 15 }}>{newTetikasa || "Tetikasa (Kitiho)"}</Text>
-                  <MaterialCommunityIcons name="arrow-down-drop-circle-outline" size={20} color="#666" />
-                </TouchableOpacity>
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+                  <Text style={styles.formMiniTitle}>Momba ny olona sy ny Tetikasa</Text>
+                  <TextInput style={styles.modalInput} placeholder="Anarana feno" placeholderTextColor="#888" value={newAnarana} onChangeText={setNewAnarana} />
+                  
+                  <TouchableOpacity style={styles.dropdownSelector} onPress={() => openGenericDropdown("tetikasa")}>
+                    <Text style={{ color: '#000000', fontSize: 15 }}>{newTetikasa || "Tetikasa (Kitiho)"}</Text>
+                    <MaterialCommunityIcons name="arrow-down-drop-circle-outline" size={20} color="#666" />
+                  </TouchableOpacity>
 
-                <Text style={styles.formMiniTitle}>Toerana (Sivana mifandray)</Text>
-                
-                <TouchableOpacity style={styles.dropdownSelector} onPress={() => openGenericDropdown("province")}>
-                  <Text style={{ color: '#000000', fontSize: 15 }}>{newProvince || "Faritany / Province (Kitiho)"}</Text>
-                  <MaterialCommunityIcons name="arrow-down-drop-circle-outline" size={20} color="#666" />
-                </TouchableOpacity>
+                  <Text style={styles.formMiniTitle}>Toerana (Sivana mifandray)</Text>
+                  
+                  <TouchableOpacity style={styles.dropdownSelector} onPress={() => openGenericDropdown("province")}>
+                    <Text style={{ color: '#000000', fontSize: 15 }}>{newProvince || "Faritany / Province (Kitiho)"}</Text>
+                    <MaterialCommunityIcons name="arrow-down-drop-circle-outline" size={20} color="#666" />
+                  </TouchableOpacity>
 
-                <TouchableOpacity style={styles.dropdownSelector} onPress={() => openGenericDropdown("region")}>
-                  <Text style={{ color: '#000000', fontSize: 15 }}>{newRegion || "Faritra / Région (Kitiho)"}</Text>
-                  <MaterialCommunityIcons name="arrow-down-drop-circle-outline" size={20} color="#666" />
-                </TouchableOpacity>
+                  <TouchableOpacity style={styles.dropdownSelector} onPress={() => openGenericDropdown("region")}>
+                    <Text style={{ color: '#000000', fontSize: 15 }}>{newRegion || "Faritra / Région (Kitiho)"}</Text>
+                    <MaterialCommunityIcons name="arrow-down-drop-circle-outline" size={20} color="#666" />
+                  </TouchableOpacity>
 
-                <TouchableOpacity style={styles.dropdownSelector} onPress={() => openGenericDropdown("district")}>
-                  <Text style={{ color: '#000000', fontSize: 15 }}>{newDistrict || "Distrika / District (Kitiho)"}</Text>
-                  <MaterialCommunityIcons name="arrow-down-drop-circle-outline" size={20} color="#666" />
-                </TouchableOpacity>
+                  <TouchableOpacity style={styles.dropdownSelector} onPress={() => openGenericDropdown("district")}>
+                    <Text style={{ color: '#000000', fontSize: 15 }}>{newDistrict || "Distrika / District (Kitiho)"}</Text>
+                    <MaterialCommunityIcons name="arrow-down-drop-circle-outline" size={20} color="#666" />
+                  </TouchableOpacity>
 
-                <TouchableOpacity style={styles.dropdownSelector} onPress={() => openGenericDropdown("commune")}>
-                  <Text style={{ color: '#000000', fontSize: 15 }}>{newCommune || "Kaominina / Commune (Kitiho)"}</Text>
-                  <MaterialCommunityIcons name="arrow-down-drop-circle-outline" size={20} color="#666" />
-                </TouchableOpacity>
+                  <TouchableOpacity style={styles.dropdownSelector} onPress={() => openGenericDropdown("commune")}>
+                    <Text style={{ color: '#000000', fontSize: 15 }}>{newCommune || "Kaominina / Commune (Kitiho)"}</Text>
+                    <MaterialCommunityIcons name="arrow-down-drop-circle-outline" size={20} color="#666" />
+                  </TouchableOpacity>
 
-                <TextInput style={styles.modalInput} placeholder="Fokontany" placeholderTextColor="#888" value={newFokontany} onChangeText={setNewFokontany} />
+                  <TextInput style={styles.modalInput} placeholder="Fokontany" placeholderTextColor="#888" value={newFokontany} onChangeText={setNewFokontany} />
 
-                <Text style={styles.formMiniTitle}>Momba ny CIN (Sivana Daty JJ/MM/AAAA)</Text>
-                <TextInput style={styles.modalInput} placeholder="Nomeraon'ny CIN" placeholderTextColor="#888" keyboardType="numeric" value={newCin} onChangeText={setNewCin} />
-                <TextInput 
-                  style={styles.modalInput} 
-                  placeholder="Daty namoahana (JJ/MM/AAAA)" 
-                  placeholderTextColor="#888"
-                  keyboardType="numeric"
-                  value={newDateDelivrance} 
-                  onChangeText={(t) => setNewDateDelivrance(format_JJ_MM_AAAA(t))} 
-                />
-                <TextInput style={styles.modalInput} placeholder="Toerana namoahana azy" placeholderTextColor="#888" value={newLieuDelivrance} onChangeText={setNewLieuDelivrance} />
+                  <Text style={styles.formMiniTitle}>Momba ny CIN (Sivana Daty JJ/MM/AAAA)</Text>
+                  <TextInput style={styles.modalInput} placeholder="Nomeraon'ny CIN" placeholderTextColor="#888" keyboardType="numeric" value={newCin} onChangeText={setNewCin} />
+                  <TextInput 
+                    style={styles.modalInput} 
+                    placeholder="Daty namoahana (JJ/MM/AAAA)" 
+                    placeholderTextColor="#888"
+                    keyboardType="numeric"
+                    value={newDateDelivrance} 
+                    onChangeText={(t) => setNewDateDelivrance(format_JJ_MM_AAAA(t))} 
+                  />
+                  <TextInput style={styles.modalInput} placeholder="Toerana namoahana azy" placeholderTextColor="#888" value={newLieuDelivrance} onChangeText={setNewLieuDelivrance} />
 
-                <View style={styles.switchContainer}>
-                  <Text style={{ fontSize: 15, color: '#4a5568' }}>Duplicata ve ilay CIN?</Text>
-                  <Switch value={newIsDuplicata} onValueChange={(val) => setNewIsDuplicata(val)} />
-                </View>
-
-                {newIsDuplicata && (
-                  <View>
-                    <TextInput 
-                      style={styles.modalInput} 
-                      placeholder="Daty Duplicata (JJ/MM/AAAA)" 
-                      placeholderTextColor="#888"
-                      keyboardType="numeric"
-                      value={newDateDuplicata} 
-                      onChangeText={(t) => setNewDateDuplicata(format_JJ_MM_AAAA(t))} 
-                    />
-                    <TextInput style={styles.modalInput} placeholder="Toerana Duplicata" placeholderTextColor="#888" value={newLieuDuplicata} onChangeText={setNewLieuDuplicata} />
+                  <View style={styles.switchContainer}>
+                    <Text style={{ fontSize: 15, color: '#4a5568' }}>Duplicata ve ilay CIN?</Text>
+                    <Switch value={newIsDuplicata} onValueChange={(val) => setNewIsDuplicata(val)} />
                   </View>
-                )}
 
-                <TextInput style={styles.modalInput} placeholder="Laharana Telefaonina" placeholderTextColor="#888" keyboardType="phone-pad" value={newTelephone} onChangeText={setNewTelephone} />
-              </ScrollView>
+                  {newIsDuplicata && (
+                    <View>
+                      <TextInput 
+                        style={styles.modalInput} 
+                        placeholder="Daty Duplicata (JJ/MM/AAAA)" 
+                        placeholderTextColor="#888"
+                        keyboardType="numeric"
+                        value={newDateDuplicata} 
+                        onChangeText={(t) => setNewDateDuplicata(format_JJ_MM_AAAA(t))} 
+                      />
+                      <TextInput style={styles.modalInput} placeholder="Toerana Duplicata" placeholderTextColor="#888" value={newLieuDuplicata} onChangeText={setNewLieuDuplicata} />
+                    </View>
+                  )}
 
-              <View style={styles.modalButtons}>
-                <TouchableOpacity onPress={() => setModalAddPerson(false)} style={styles.btnFlat}><Text style={{ color: '#666', fontWeight: 'bold' }}>HAKATONA</Text></TouchableOpacity>
-                <TouchableOpacity onPress={handleSaveNewPerson} style={styles.btnRaised}><Text style={{ color: '#fff', fontWeight: 'bold' }}>TEHIRIZINA</Text></TouchableOpacity>
+                  <TextInput style={styles.modalInput} placeholder="Laharana Telefaonina" placeholderTextColor="#888" keyboardType="phone-pad" value={newTelephone} onChangeText={setNewTelephone} />
+                </ScrollView>
+
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity onPress={() => setModalAddPerson(false)} style={styles.btnFlat}><Text style={{ color: '#666', fontWeight: 'bold' }}>HAKATONA</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={handleSaveNewPerson} style={styles.btnRaised}><Text style={{ color: '#fff', fontWeight: 'bold' }}>TEHIRIZINA</Text></TouchableOpacity>
+                </View>
               </View>
-            </View>
+            </KeyboardAvoidingView>
           </View>
         </Modal>
 
         {/* ================= MODAL EDIT PERSON ================= */}
         <Modal visible={modalEditPerson} animationType="slide" transparent={true}>
           <View style={styles.modalCentered}>
-            <View style={[styles.modalCard, { maxHeight: '90%' }]}>
-              <Text style={styles.modalTitle}>Hanova mombamomba ny Enquête ({selectedPersonId})</Text>
-              
-              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
-                <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#333', marginBottom: 10 }}>Anarana: {newAnarana}</Text>
-
-                <Text style={styles.formMiniTitle}>Toerana Vaovao (Sivana mifandray)</Text>
+            <KeyboardAvoidingView 
+              style={{ width: '100%', alignItems: 'center' }}
+              behavior={Platform.OS === "ios" ? "padding" : "height"}
+            >
+              <View style={[styles.modalCard, { maxHeight: '90%' }]}>
+                <Text style={styles.modalTitle}>Hanova mombamomba ny Enquête ({selectedPersonId})</Text>
                 
-                <TouchableOpacity style={styles.dropdownSelector} onPress={() => openGenericDropdown("province")}>
-                  <Text style={{ color: '#000000', fontSize: 15 }}>{newProvince || "Faritany / Province (Kitiho)"}</Text>
-                  <MaterialCommunityIcons name="arrow-down-drop-circle-outline" size={20} color="#666" />
-                </TouchableOpacity>
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+                  <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#333', marginBottom: 10 }}>Anarana: {newAnarana}</Text>
 
-                <TouchableOpacity style={styles.dropdownSelector} onPress={() => openGenericDropdown("region")}>
-                  <Text style={{ color: '#000000', fontSize: 15 }}>{newRegion || "Faritra / Région (Kitiho)"}</Text>
-                  <MaterialCommunityIcons name="arrow-down-drop-circle-outline" size={20} color="#666" />
-                </TouchableOpacity>
+                  <Text style={styles.formMiniTitle}>Toerana Vaovao (Sivana mifandray)</Text>
+                  
+                  <TouchableOpacity style={styles.dropdownSelector} onPress={() => openGenericDropdown("province")}>
+                    <Text style={{ color: '#000000', fontSize: 15 }}>{newProvince || "Faritany / Province (Kitiho)"}</Text>
+                    <MaterialCommunityIcons name="arrow-down-drop-circle-outline" size={20} color="#666" />
+                  </TouchableOpacity>
 
-                <TouchableOpacity style={styles.dropdownSelector} onPress={() => openGenericDropdown("district")}>
-                  <Text style={{ color: '#000000', fontSize: 15 }}>{newDistrict || "Distrika / District (Kitiho)"}</Text>
-                  <MaterialCommunityIcons name="arrow-down-drop-circle-outline" size={20} color="#666" />
-                </TouchableOpacity>
+                  <TouchableOpacity style={styles.dropdownSelector} onPress={() => openGenericDropdown("region")}>
+                    <Text style={{ color: '#000000', fontSize: 15 }}>{newRegion || "Faritra / Région (Kitiho)"}</Text>
+                    <MaterialCommunityIcons name="arrow-down-drop-circle-outline" size={20} color="#666" />
+                  </TouchableOpacity>
 
-                <TouchableOpacity style={styles.dropdownSelector} onPress={() => openGenericDropdown("commune")}>
-                  <Text style={{ color: '#000000', fontSize: 15 }}>{newCommune || "Kaominina / Commune (Kitiho)"}</Text>
-                  <MaterialCommunityIcons name="arrow-down-drop-circle-outline" size={20} color="#666" />
-                </TouchableOpacity>
+                  <TouchableOpacity style={styles.dropdownSelector} onPress={() => openGenericDropdown("district")}>
+                    <Text style={{ color: '#000000', fontSize: 15 }}>{newDistrict || "Distrika / District (Kitiho)"}</Text>
+                    <MaterialCommunityIcons name="arrow-down-drop-circle-outline" size={20} color="#666" />
+                  </TouchableOpacity>
 
-                <TextInput style={styles.modalInput} placeholder="Fokontany" placeholderTextColor="#888" value={newFokontany} onChangeText={setNewFokontany} />
+                  <TouchableOpacity style={styles.dropdownSelector} onPress={() => openGenericDropdown("commune")}>
+                    <Text style={{ color: '#000000', fontSize: 15 }}>{newCommune || "Kaominina / Commune (Kitiho)"}</Text>
+                    <MaterialCommunityIcons name="arrow-down-drop-circle-outline" size={20} color="#666" />
+                  </TouchableOpacity>
 
-                <Text style={styles.formMiniTitle}>Momba ny CIN (Sivana Daty JJ/MM/AAAA)</Text>
-                <TextInput style={styles.modalInput} placeholder="Nomeraon'ny CIN" placeholderTextColor="#888" keyboardType="numeric" value={newCin} onChangeText={setNewCin} />
-                <TextInput 
-                  style={styles.modalInput} 
-                  placeholder="Daty namoahana (JJ/MM/AAAA)" 
-                  placeholderTextColor="#888"
-                  keyboardType="numeric"
-                  value={newDateDelivrance} 
-                  onChangeText={(t) => setNewDateDelivrance(format_JJ_MM_AAAA(t))} 
-                />
-                <TextInput style={styles.modalInput} placeholder="Toerana namoahana azy" placeholderTextColor="#888" value={newLieuDelivrance} onChangeText={setNewLieuDelivrance} />
+                  <TextInput style={styles.modalInput} placeholder="Fokontany" placeholderTextColor="#888" value={newFokontany} onChangeText={setNewFokontany} />
 
-                <View style={styles.switchContainer}>
-                  <Text style={{ fontSize: 15, color: '#4a5568' }}>Duplicata ve ilay CIN?</Text>
-                  <Switch value={newIsDuplicata} onValueChange={(val) => setNewIsDuplicata(val)} />
-                </View>
+                  <Text style={styles.formMiniTitle}>Momba ny CIN (Sivana Daty JJ/MM/AAAA)</Text>
+                  <TextInput style={styles.modalInput} placeholder="Nomeraon'ny CIN" placeholderTextColor="#888" keyboardType="numeric" value={newCin} onChangeText={setNewCin} />
+                  <TextInput 
+                    style={styles.modalInput} 
+                    placeholder="Daty namoahana (JJ/MM/AAAA)" 
+                    placeholderTextColor="#888"
+                    keyboardType="numeric"
+                    value={newDateDelivrance} 
+                    onChangeText={(t) => setNewDateDelivrance(format_JJ_MM_AAAA(t))} 
+                  />
+                  <TextInput style={styles.modalInput} placeholder="Toerana namoahana azy" placeholderTextColor="#888" value={newLieuDelivrance} onChangeText={setNewLieuDelivrance} />
 
-                {newIsDuplicata && (
-                  <View>
-                    <TextInput 
-                      style={styles.modalInput} 
-                      placeholder="Daty Duplicata (JJ/MM/AAAA)" 
-                      placeholderTextColor="#888"
-                      keyboardType="numeric"
-                      value={newDateDuplicata} 
-                      onChangeText={(t) => setNewDateDuplicata(format_JJ_MM_AAAA(t))} 
-                    />
-                    <TextInput style={styles.modalInput} placeholder="Toerana Duplicata" placeholderTextColor="#888" value={newLieuDuplicata} onChangeText={setNewLieuDuplicata} />
+                  <View style={styles.switchContainer}>
+                    <Text style={{ fontSize: 15, color: '#4a5568' }}>Duplicata ve ilay CIN?</Text>
+                    <Switch value={newIsDuplicata} onValueChange={(val) => setNewIsDuplicata(val)} />
                   </View>
-                )}
 
-                <TextInput style={styles.modalInput} placeholder="Laharana Telefaonina" placeholderTextColor="#888" keyboardType="phone-pad" value={newTelephone} onChangeText={setNewTelephone} />
-              </ScrollView>
+                  {newIsDuplicata && (
+                    <View>
+                      <TextInput 
+                        style={styles.modalInput} 
+                        placeholder="Daty Duplicata (JJ/MM/AAAA)" 
+                        placeholderTextColor="#888"
+                        keyboardType="numeric"
+                        value={newDateDuplicata} 
+                        onChangeText={(t) => setNewDateDuplicata(format_JJ_MM_AAAA(t))} 
+                      />
+                      <TextInput style={styles.modalInput} placeholder="Toerana Duplicata" placeholderTextColor="#888" value={newLieuDuplicata} onChangeText={setNewLieuDuplicata} />
+                    </View>
+                  )}
 
-              <View style={styles.modalButtons}>
-                <TouchableOpacity onPress={() => setModalEditPerson(false)} style={styles.btnFlat}><Text style={{ color: '#666', fontWeight: 'bold' }}>HAKATONA</Text></TouchableOpacity>
-                <TouchableOpacity onPress={handleUpdatePerson} style={styles.btnRaised}><Text style={{ color: '#fff', fontWeight: 'bold' }}>OK HANOVA</Text></TouchableOpacity>
+                  <TextInput style={styles.modalInput} placeholder="Laharana Telefaonina" placeholderTextColor="#888" keyboardType="phone-pad" value={newTelephone} onChangeText={setNewTelephone} />
+                </ScrollView>
+
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity onPress={() => setModalEditPerson(false)} style={styles.btnFlat}><Text style={{ color: '#666', fontWeight: 'bold' }}>HAKATONA</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={handleUpdatePerson} style={styles.btnRaised}><Text style={{ color: '#fff', fontWeight: 'bold' }}>OK HANOVA</Text></TouchableOpacity>
+                </View>
               </View>
-            </View>
+            </KeyboardAvoidingView>
           </View>
         </Modal>
 
@@ -848,21 +876,26 @@ export default function App() {
         {/* ================= MODAL ADD USER ================= */}
         <Modal visible={modalAddUser} animationType="slide" transparent={true}>
           <View style={styles.modalCentered}>
-            <View style={styles.modalCard}>
-              <Text style={styles.modalTitle}>New User</Text>
-              <TextInput style={styles.modalInput} placeholder="Username" placeholderTextColor="#888" value={newUsername} onChangeText={setNewUsername} autoCapitalize="none" />
-              <TextInput style={styles.modalInput} placeholder="Password" placeholderTextColor="#888" value={newUserPassword} onChangeText={setNewUserPassword} />
-              
-              <TouchableOpacity style={[styles.modalInput, styles.rowBetween]} onPress={() => setModalSelectRole(true)}>
-                <Text style={{ color: '#000000' }}>{newUserRole || "Role (Kitiho)"}</Text>
-                <MaterialCommunityIcons name="arrow-down-drop-circle-outline" size={20} color="#666" />
-              </TouchableOpacity>
+            <KeyboardAvoidingView 
+              style={{ width: '100%', alignItems: 'center' }}
+              behavior={Platform.OS === "ios" ? "padding" : "height"}
+            >
+              <View style={styles.modalCard}>
+                <Text style={styles.modalTitle}>New User</Text>
+                <TextInput style={styles.modalInput} placeholder="Username" placeholderTextColor="#888" value={newUsername} onChangeText={setNewUsername} autoCapitalize="none" />
+                <TextInput style={styles.modalInput} placeholder="Password" placeholderTextColor="#888" value={newUserPassword} onChangeText={setNewUserPassword} />
+                
+                <TouchableOpacity style={[styles.modalInput, styles.rowBetween]} onPress={() => setModalSelectRole(true)}>
+                  <Text style={{ color: '#000000' }}>{newUserRole || "Role (Kitiho)"}</Text>
+                  <MaterialCommunityIcons name="arrow-down-drop-circle-outline" size={20} color="#666" />
+                </TouchableOpacity>
 
-              <View style={styles.modalButtons}>
-                <TouchableOpacity onPress={() => setModalAddUser(false)} style={styles.btnFlat}><Text style={{ color: '#666', fontWeight: 'bold' }}>HAKATONA</Text></TouchableOpacity>
-                <TouchableOpacity onPress={handleCreateUser} style={styles.btnRaised}><Text style={{ color: '#fff', fontWeight: 'bold' }}>CREATE</Text></TouchableOpacity>
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity onPress={() => setModalAddUser(false)} style={styles.btnFlat}><Text style={{ color: '#666', fontWeight: 'bold' }}>HAKATONA</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={handleCreateUser} style={styles.btnRaised}><Text style={{ color: '#fff', fontWeight: 'bold' }}>CREATE</Text></TouchableOpacity>
+                </View>
               </View>
-            </View>
+            </KeyboardAvoidingView>
           </View>
         </Modal>
 
@@ -885,7 +918,7 @@ export default function App() {
 }
 
 // ==========================================
-// STYLES VOAHITSY MATIHANINA
+// STYLES VOAHITSY MATIHANINA SY MAZAVA
 // ==========================================
 const styles = StyleSheet.create({
   containerSplash: { flex: 1, backgroundColor: '#0d1b2a', justifyContent: 'center', alignItems: 'center' },
@@ -905,8 +938,8 @@ const styles = StyleSheet.create({
   
   btnLogin: { backgroundColor: '#0d3373', width: '100%', height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center', marginTop: 15 },
   btnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-  loginDate: { marginTop: 15, fontSize: 11, color: '#aaa' },
-  sonia: { position: 'absolute', bottom: 30, fontSize: 12, color: '#aaa' },
+  loginDate: { marginTop: 20, fontSize: 12, color: '#718096', textAlign: 'center', fontWeight: '500' },
+  sonia: { marginTop: 25, fontSize: 12, color: '#718096', fontWeight: 'bold', letterSpacing: 0.5, textAlign: 'center' },
 
   containerMain: { flex: 1, backgroundColor: '#f5f5f5' },
   appBar: { backgroundColor: '#0047b3', height: 90, paddingTop: 40, paddingHorizontal: 15, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', elevation: 4 },
