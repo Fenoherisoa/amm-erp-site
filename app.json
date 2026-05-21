@@ -20,7 +20,8 @@
         "foregroundImage": "./assets/logo.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.amm.connect"
+      "package": "com.amm.connect",
+      "softwareKeyboardLayoutMode": "resize"
     },
     "web": {
       "favicon": "./assets/logo2.png"
