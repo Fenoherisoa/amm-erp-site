@@ -46,6 +46,7 @@ export default function App() {
   
   const [currentDropdownType, setCurrentDropdownType] = useState(""); 
   const [modalSelectGeneric, setModalSelectGeneric] = useState(false);
+  const [filterText, setFilterText] = useState("");
   const [genericDropdownList, setGenericDropdownList] = useState([]);
 
   const [newAnarana, setNewAnarana] = useState("");
@@ -195,6 +196,50 @@ export default function App() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Apetraho ireto state ireto
+  const [allMembers, setAllMembers] = useState([]); // Lisitra feno
+
+  // Fetch data indray mandeha monja rehefa mi-load ny screen
+  useEffect(() => {
+    if (currentScreen === "main") {
+      loadAllData();
+    }
+  }, [currentScreen]);
+
+  const loadAllData = async () => {
+    const res = await fetch(`${BASE_URL}/olona.json`);
+    const data = await res.json() || {};
+    const formatted = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+    setAllMembers(formatted);
+    setPeopleList(formatted); // Asio default lisitra feno
+  };
+
+  const handleFilterChange = (text) => {
+    setSearchQuery(text);
+    const query = text.toUpperCase().trim();
+    const cleanRole = userRole.replace("RESP. ", "").trim();
+    const tetikasaFantatra = ["VAROTRA", "FAMBOLENA", "ASA TANANA", "FIOMPIANA KISOA", "FIOMPIANA AKOHO", "FIOMPIANA GANA", "FIOMPIANA GISA"];
+
+    const filtered = allMembers.filter(p => {
+      // Fepetra: Mitady amin'ny Anarana NA Telefaonina
+      const matchesQuery = (p.anarana?.toUpperCase().includes(query) || p.telephone?.includes(query));
+      
+      // Fepetra: Role (Ampiana ny EDITEUR)
+      let hasAccess = false;
+      if (["ADMIN", "ADHERENT", "EDITEUR"].includes(userRole.toUpperCase())) {
+        hasAccess = true;
+      } else if (cleanRole === "FIOMPIANA HAFA") {
+        hasAccess = (p.id.startsWith("FH-") || !tetikasaFantatra.includes((p.tetikasa || "").toUpperCase()));
+      } else {
+        hasAccess = (cleanRole === (p.tetikasa || "").toUpperCase());
+      }
+
+      return matchesQuery && hasAccess;
+    });
+
+    setPeopleList(filtered);
   };
 
   const handleSearchName = async () => {
@@ -347,6 +392,8 @@ export default function App() {
 
   const openGenericDropdown = (type) => {
     setCurrentDropdownType(type);
+    setFilterText("");
+
     if (type === "province") {
       setGenericDropdownList(Object.keys(madagascarData));
       setModalSelectGeneric(true);
@@ -605,7 +652,7 @@ export default function App() {
             placeholder="Tadiavo anarana..."
             placeholderTextColor="#888"
             value={searchQuery}
-            onChangeText={setSearchQuery}
+            onChangeText={handleFilterChange}
             onSubmitEditing={handleSearchName}
           />
         </View>
@@ -822,14 +869,34 @@ export default function App() {
               <Text style={{ fontWeight: 'bold', padding: 10, color: '#ff9900', textTransform: 'uppercase', textAlign: 'center' }}>
                 Safidio ny {currentDropdownType}
               </Text>
+              
+              {/* Eto ny TextInput hanaovana Autocomplete */}
+              <TextInput 
+                style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 8, margin: 10 }}
+                placeholder="Tadiavo..."
+                onChangeText={(text) => setFilterText(text)}
+                value={filterText}
+              />
+
               <ScrollView style={{ maxHeight: 280 }} showsVerticalScrollIndicator={true}>
-                {genericDropdownList.map((item, idx) => (
-                  <TouchableOpacity key={idx} style={styles.dropdownItem} onPress={() => handleSelectGenericItem(item)}>
-                    <Text style={{ fontSize: 16, color: '#000000' }}>{item}</Text>
-                  </TouchableOpacity>
+                {/* Eto no misy ny sivana (filter) */}
+                {genericDropdownList
+                  .filter(item => item.toLowerCase().includes(filterText.toLowerCase()))
+                  .map((item, idx) => (
+                    <TouchableOpacity 
+                      key={idx} 
+                      style={styles.dropdownItem} 
+                      onPress={() => {
+                        handleSelectGenericItem(item);
+                        setFilterText(""); // Reset rehefa avy nifidy
+                      }}
+                    >
+                      <Text style={{ fontSize: 16, color: '#000000' }}>{item}</Text>
+                    </TouchableOpacity>
                 ))}
               </ScrollView>
-              <TouchableOpacity onPress={() => setModalSelectGeneric(false)} style={{ alignItems: 'center', padding: 12, marginTop: 5 }}>
+
+              <TouchableOpacity onPress={() => { setModalSelectGeneric(false); setFilterText(""); }} style={{ alignItems: 'center', padding: 12, marginTop: 5 }}>
                 <Text style={{ color: 'red', fontWeight: 'bold' }}>Hiverina</Text>
               </TouchableOpacity>
             </View>
