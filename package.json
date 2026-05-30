@@ -1,6 +1,6 @@
 {
   "name": "E-CONNECT",
-  "version": "1.2.2",
+  "version": "2.2.2",
   "license": "0BSD",
   "main": "index.js",
   "scripts": {
