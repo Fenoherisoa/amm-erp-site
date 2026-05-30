@@ -1,11 +1,12 @@
 {
   "expo": {
-    "name": "AMM CONNECT 2",
+    "name": "E-CONNECT",
     "slug": "amm-connect",
-    "version": "1.2.0",
+    "version": "2.2.1",
     "orientation": "portrait",
-    "icon": "./assets/logo.png",
+    "icon": "./assets/logo2.png",
     "userInterfaceStyle": "light",
+    "backgroundColor": "#ffffff",
     "newArchEnabled": false,
     "splash": {
       "image": "./assets/logo2.png",
@@ -16,8 +17,10 @@
       "supportsTablet": true
     },
     "android": {
+      "userInterfaceStyle": "light",
+      "backgroundColor": "#ffffff",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/logo.png",
+        "foregroundImage": "./assets/logo2.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.amm.connect",
