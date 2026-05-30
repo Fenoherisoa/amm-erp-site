@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, 
   ActivityIndicator, Image, Animated, Alert, Dimensions, Modal, Switch,
-  KeyboardAvoidingView, Platform, StatusBar // Nampiana KeyboardAvoidingView sy Platform ary StatusBar
+  KeyboardAvoidingView, Platform, StatusBar, FlatList // Nampiana KeyboardAvoidingView sy Platform ary StatusBar
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { madagascarData } from './madagascarData'; 
@@ -46,22 +46,15 @@ export default function App() {
   
   const [currentDropdownType, setCurrentDropdownType] = useState(""); 
   const [modalSelectGeneric, setModalSelectGeneric] = useState(false);
+  const [filterText, setFilterText] = useState("");
   const [genericDropdownList, setGenericDropdownList] = useState([]);
 
-  const [newAnarana, setNewAnarana] = useState("");
-  const [newProvince, setNewProvince] = useState("");
-  const [newRegion, setNewRegion] = useState("");
-  const [newDistrict, setNewDistrict] = useState("");
-  const [newCommune, setNewCommune] = useState("");
-  const [newFokontany, setNewFokontany] = useState("");
-  const [newCin, setNewCin] = useState("");
-  const [newDateDelivrance, setNewDateDelivrance] = useState("");
-  const [newLieuDelivrance, setNewLieuDelivrance] = useState("");
-  const [newIsDuplicata, setNewIsDuplicata] = useState(false);
-  const [newDateDuplicata, setNewDateDuplicata] = useState("");
-  const [newLieuDuplicata, setNewLieuDuplicata] = useState("");
-  const [newTelephone, setNewTelephone] = useState("");
-  const [newTetikasa, setNewTetikasa] = useState("");
+  const [personData, setPersonData] = useState({
+    anarana: "", province: "", region: "", district: "", commune: "",
+    fokontany: "", cin: "", date_delivrance: "", lieu_delivrance: "",
+    is_duplicata: false, date_duplicata: "", lieu_duplicata: "",
+    telephone: "", tetikasa: ""
+  });
   
   const [selectedPersonId, setSelectedPersonId] = useState("");
 
@@ -102,6 +95,18 @@ export default function App() {
       return () => clearTimeout(timer);
     }
   }, [currentScreen]);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      const filtered = allMembers.filter(p => 
+        p.anarana.toUpperCase().includes(searchQuery.toUpperCase()) || 
+        (p.telephone || "").includes(searchQuery)
+      );
+      setPeopleList(filtered);
+    }, 300); // Miandry 300ms vao manivana
+
+    return () => clearTimeout(handler);
+  }, [searchQuery, allMembers]);
 
   const handleVerifyLogin = async () => {
     const u = username.trim().toLowerCase();
@@ -197,6 +202,50 @@ export default function App() {
     }
   };
 
+  // Apetraho ireto state ireto
+  const [allMembers, setAllMembers] = useState([]); // Lisitra feno
+
+  // Fetch data indray mandeha monja rehefa mi-load ny screen
+  useEffect(() => {
+    if (currentScreen === "main") {
+      loadAllData();
+    }
+  }, [currentScreen]);
+
+  const loadAllData = async () => {
+    const res = await fetch(`${BASE_URL}/olona.json`);
+    const data = await res.json() || {};
+    const formatted = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+    setAllMembers(formatted);
+    setPeopleList(formatted); // Asio default lisitra feno
+  };
+
+  const handleFilterChange = (text) => {
+    setSearchQuery(text);
+    const query = text.toUpperCase().trim();
+    const cleanRole = userRole.replace("RESP. ", "").trim();
+    const tetikasaFantatra = ["VAROTRA", "FAMBOLENA", "ASA TANANA", "FIOMPIANA KISOA", "FIOMPIANA AKOHO", "FIOMPIANA GANA", "FIOMPIANA GISA"];
+
+    const filtered = allMembers.filter(p => {
+      // Fepetra: Mitady amin'ny Anarana NA Telefaonina
+      const matchesQuery = (p.anarana?.toUpperCase().includes(query) || p.telephone?.includes(query));
+      
+      // Fepetra: Role (Ampiana ny EDITEUR)
+      let hasAccess = false;
+      if (["ADMIN", "ADHERENT", "EDITEUR"].includes(userRole.toUpperCase())) {
+        hasAccess = true;
+      } else if (cleanRole === "FIOMPIANA HAFA") {
+        hasAccess = (p.id.startsWith("FH-") || !tetikasaFantatra.includes((p.tetikasa || "").toUpperCase()));
+      } else {
+        hasAccess = (cleanRole === (p.tetikasa || "").toUpperCase());
+      }
+
+      return matchesQuery && hasAccess;
+    });
+
+    setPeopleList(filtered);
+  };
+
   const handleSearchName = async () => {
     const query = searchQuery.toUpperCase().trim();
     const cleanRole = userRole.replace("RESP. ", "").trim();
@@ -239,88 +288,58 @@ export default function App() {
   };
 
   const handleSaveNewPerson = async () => {
-    const anarana = newAnarana.toUpperCase().trim();
-    const tetikasa = newTetikasa.toUpperCase().trim();
-
-    const lisitraMazava = [
-      "VAROTRA", "FAMBOLENA", "ASA TANANA", 
-      "FIOMPIANA KISOA", "FIOMPIANA AKOHO", 
-      "FIOMPIANA GANA", "FIOMPIANA GISA"
-    ];
-
-    if (!anarana || !tetikasa || !newCin) {
-      Alert.alert("Hafatra", "Tsy maintsy fenoina ny Anarana, Tetikasa ary CIN!");
+    const { anarana, tetikasa, cin } = personData;
+    if (!anarana || !tetikasa || !cin) {
+      Alert.alert("Hafatra", "Fenoy ny Anarana, Tetikasa, ary CIN!");
       return;
     }
 
+    setIsLoading(true);
     try {
-      const response = await fetch(`${BASE_URL}/olona.json`);
-      const allData = await response.json() || {};
+      // Mampiasa ny allMembers efa misy fa tsy manao fetch intsony
+      const lisitraMazava = ["VAROTRA", "FAMBOLENA", "ASA TANANA", "FIOMPIANA KISOA", "FIOMPIANA AKOHO", "FIOMPIANA GANA", "FIOMPIANA GISA"];
       
-      let prefix = "P";
-      let count = 0;
-
-      if (lisitraMazava.includes(tetikasa)) {
-        prefix = PROJECT_PREFIX[tetikasa] || "P";
-        count = Object.values(allData).filter(item => (item.tetikasa || "").toUpperCase() === tetikasa).length;
-      } else {
-        prefix = "FH";
-        count = Object.keys(allData).filter(key => key.startsWith("FH-")).length;
-      }
-
+      let prefix = lisitraMazava.includes(tetikasa.toUpperCase()) ? (PROJECT_PREFIX[tetikasa.toUpperCase()] || "P") : "FH";
+      const count = allMembers.filter(p => p.id.startsWith(prefix)).length;
       const newId = `${prefix}-${String(count + 1).padStart(3, '0')}`;
 
-      const enqueteFeno = {
-        anarana,
-        province: newProvince,
-        region: newRegion,
-        district: newDistrict,
-        commune: newCommune,
-        fokontany: newFokontany.toUpperCase(),
-        cin: newCin,
-        date_delivrance: newDateDelivrance,
-        lieu_delivrance: newLieuDelivrance.toUpperCase(),
-        is_duplicata: newIsDuplicata,
-        date_duplicata: newIsDuplicata ? newDateDuplicata : null,
-        lieu_duplicata: newIsDuplicata ? newLieuDuplicata.toUpperCase() : null,
-        telephone: newTelephone,
-        tetikasa,
-        submitted_at: new Date().toISOString()
-      };
+      const enqueteFeno = { ...personData, submitted_at: new Date().toISOString() };
 
-      await fetch(`${BASE_URL}/olona/${newId}.json`, {
-        method: 'PUT',
-        body: JSON.stringify(enqueteFeno)
-      });
-
+      await fetch(`${BASE_URL}/olona/${newId}.json`, { method: 'PUT', body: JSON.stringify(enqueteFeno) });
+      
       setModalAddPerson(false);
-      clearForm();
-      handleSearchName(); 
-    } catch (error) {
-      Alert.alert("Olana", "Tsy nahomby ny fampidirana.");
+      setPersonData({ anarana: "", province: "", region: "", district: "", commune: "", fokontany: "", cin: "", date_delivrance: "", lieu_delivrance: "", is_duplicata: false, date_duplicata: "", lieu_duplicata: "", telephone: "", tetikasa: "" });
+      loadAllData(); // Refresh list
+    } catch (e) {
+      Alert.alert("Olana", "Tsy tafiditra ny data.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleUpdatePerson = async () => {
-    if (!newCin) {
+    // 1. Ampiasao ny personData.cin fa tsy newCin
+    if (!personData.cin) {
       Alert.alert("Hafatra", "Tsy azo avela banga ny CIN!");
       return;
     }
 
     try {
+      // 2. Mamorona updatedData mivantana avy amin'ny personData
       const updatedData = {
-        province: newProvince,
-        region: newRegion,
-        district: newDistrict,
-        commune: newCommune,
-        fokontany: newFokontany.toUpperCase(),
-        cin: newCin,
-        date_delivrance: newDateDelivrance,
-        lieu_delivrance: newLieuDelivrance.toUpperCase(),
-        is_duplicata: newIsDuplicata,
-        date_duplicata: newIsDuplicata ? newDateDuplicata : null,
-        lieu_duplicata: newIsDuplicata ? newLieuDuplicata.toUpperCase() : null,
-        telephone: newTelephone
+        province: personData.province,
+        region: personData.region,
+        district: personData.district,
+        commune: personData.commune,
+        fokontany: (personData.fokontany || "").toUpperCase(),
+        cin: personData.cin,
+        date_delivrance: personData.date_delivrance,
+        lieu_delivrance: (personData.lieu_delivrance || "").toUpperCase(),
+        is_duplicata: personData.is_duplicata,
+        date_duplicata: personData.is_duplicata ? personData.date_duplicata : null,
+        lieu_duplicata: personData.is_duplicata ? (personData.lieu_duplicata || "").toUpperCase() : null,
+        telephone: personData.telephone,
+        tetikasa: personData.tetikasa // Aza adino raha ilaina
       };
 
       await fetch(`${BASE_URL}/olona/${selectedPersonId}.json`, {
@@ -329,7 +348,15 @@ export default function App() {
       });
 
       setModalEditPerson(false);
-      clearForm();
+      
+      // 3. Raha ny clearForm dia manafotsy ny personData
+      setPersonData({
+        anarana: "", province: "", region: "", district: "", commune: "",
+        fokontany: "", cin: "", date_delivrance: "", lieu_delivrance: "",
+        is_duplicata: false, date_duplicata: "", lieu_duplicata: "",
+        telephone: "", tetikasa: ""
+      });
+      
       handleSearchName();
       Alert.alert("Fandresena", "Tafiditra tsara ny fanovana!");
     } catch (error) {
@@ -338,38 +365,54 @@ export default function App() {
   };
 
   const clearForm = () => {
-    setNewAnarana(""); setNewProvince(""); setNewRegion(""); setNewDistrict(""); 
-    setNewCommune(""); setNewFokontany(""); setNewCin(""); setNewDateDelivrance(""); 
-    setNewLieuDelivrance(""); setNewIsDuplicata(false); setNewDateDuplicata(""); 
-    setNewLieuDuplicata(""); setNewTelephone(""); setNewTetikasa("");
-    setSelectedPersonId("");
+    setPersonData({
+      anarana: "", 
+      province: "", 
+      region: "", 
+      district: "", 
+      commune: "",
+      fokontany: "", 
+      cin: "", 
+      date_delivrance: "", 
+      lieu_delivrance: "",
+      is_duplicata: false, 
+      date_duplicata: "", 
+      lieu_duplicata: "",
+      telephone: "", 
+      tetikasa: ""
+    });
   };
 
   const openGenericDropdown = (type) => {
     setCurrentDropdownType(type);
+    setFilterText("");
+
+    // Ampiasao ny personData fa tsy ny newProvince/newRegion intsony
+    const { province, region, district } = personData;
+
     if (type === "province") {
       setGenericDropdownList(Object.keys(madagascarData));
       setModalSelectGeneric(true);
     } else if (type === "region") {
-      if (!newProvince) {
+      if (!province) {
         Alert.alert("Hafatra", "Misafidiana Faritany / Province aloha!");
         return;
       }
-      setGenericDropdownList(Object.keys(madagascarData[newProvince] || {}));
+      setGenericDropdownList(Object.keys(madagascarData[province] || {}));
       setModalSelectGeneric(true);
     } else if (type === "district") {
-      if (!newRegion) {
+      if (!region) {
         Alert.alert("Hafatra", "Misafidiana Faritra / Région aloha!");
         return;
       }
-      setGenericDropdownList(Object.keys(madagascarData[newProvince]?.[newRegion] || {}));
+      setGenericDropdownList(Object.keys(madagascarData[province]?.[region] || {}));
       setModalSelectGeneric(true);
     } else if (type === "commune") {
-      if (!newDistrict) {
+      if (!district) {
         Alert.alert("Hafatra", "Misafidiana Distrika / District aloha!");
         return;
       }
-      setGenericDropdownList(madagascarData[newProvince]?.[newRegion]?.[newDistrict] || []);
+      setGenericDropdownList(madagascarData[province]?.[region]?.[district] || []);
       setModalSelectGeneric(true);
     } else if (type === "tetikasa") {
       setGenericDropdownList(["VAROTRA", "FAMBOLENA", "ASA TANANA", "FIOMPIANA KISOA", "FIOMPIANA AKOHO", "FIOMPIANA GANA", "FIOMPIANA GISA", "FIOMPIANA HAFA"]);
@@ -378,20 +421,20 @@ export default function App() {
   };
 
   const handleSelectGenericItem = (item) => {
-    if (currentDropdownType === "province") {
-      setNewProvince(item);
-      setNewRegion(""); setNewDistrict(""); setNewCommune(""); 
-    } else if (currentDropdownType === "region") {
-      setNewRegion(item);
-      setNewDistrict(""); setNewCommune("");
-    } else if (currentDropdownType === "district") {
-      setNewDistrict(item);
-      setNewCommune("");
-    } else if (currentDropdownType === "commune") {
-      setNewCommune(item);
-    } else if (currentDropdownType === "tetikasa") {
-      setNewTetikasa(item);
-    }
+    setPersonData(prev => {
+      let newData = { ...prev };
+      newData[currentDropdownType] = item;
+
+      // Fafana (reset) ireo saha mifandray raha misy ovaina
+      if (currentDropdownType === "province") {
+        newData.region = ""; newData.district = ""; newData.commune = "";
+      } else if (currentDropdownType === "region") {
+        newData.district = ""; newData.commune = "";
+      } else if (currentDropdownType === "district") {
+        newData.commune = "";
+      }
+      return newData;
+    });
     setModalSelectGeneric(false);
   };
 
@@ -605,43 +648,33 @@ export default function App() {
             placeholder="Tadiavo anarana..."
             placeholderTextColor="#888"
             value={searchQuery}
-            onChangeText={setSearchQuery}
+            onChangeText={handleFilterChange}
             onSubmitEditing={handleSearchName}
           />
         </View>
 
-        <ScrollView style={styles.scrollViewStyle}>
-          {peopleList.map((item) => (
+        <FlatList
+          data={peopleList}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
             <TouchableOpacity 
-              key={item.id} 
               style={styles.customPersonCard}
               onPress={() => {
                 setSelectedPersonId(item.id);
-                setNewAnarana(item.anarana || "");
-                setNewProvince(item.province || "");
-                setNewRegion(item.region || "");
-                setNewDistrict(item.district || "");
-                setNewCommune(item.commune || "");
-                setNewFokontany(item.fokontany || "");
-                setNewCin(item.cin || "");
-                setNewDateDelivrance(item.date_delivrance || "");
-                setNewLieuDelivrance(item.lieu_delivrance || "");
-                setNewIsDuplicata(item.is_duplicata || false);
-                setNewDateDuplicata(item.date_duplicata || "");
-                setNewLieuDuplicata(item.lieu_duplicata || "");
-                setNewTelephone(item.telephone || "");
+                setPersonData(item); // Fenoina mivantana ny form
                 setModalEditPerson(true);
               }}
             >
               <MaterialCommunityIcons name="account-circle-outline" size={40} color="#0052cc" />
               <View style={{ flex: 1, marginLeft: 15 }}>
-                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#000' }}>{item.id} | {item.anarana}</Text>
-                <Text style={{ color: '#333', fontSize: 14 }}>Toerana: {item.province} - {item.district} - {item.commune}</Text>
-                <Text style={{ color: '#555', fontSize: 14 }}>Fokontany: {item.fokontany} | Tel: {item.telephone || "Tsy misy"}</Text>
+                <Text style={{ fontSize: 16, fontWeight: 'bold' }}>{item.id} | {item.anarana}</Text>
+                <Text>Toerana: {item.province}</Text>
               </View>
             </TouchableOpacity>
-          ))}
-        </ScrollView>
+          )}
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+        />
 
         {(userRole === "ADMIN" || userRole === "ADHERENT") && (
           <TouchableOpacity style={styles.fab} onPress={() => { clearForm(); setModalAddPerson(true); }}>
@@ -661,69 +694,111 @@ export default function App() {
                 
                 <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
                   <Text style={styles.formMiniTitle}>Momba ny olona sy ny Tetikasa</Text>
-                  <TextInput style={styles.modalInput} placeholder="Anarana feno" placeholderTextColor="#888" value={newAnarana} onChangeText={setNewAnarana} />
+                  
+                  <TextInput 
+                    style={styles.modalInput} 
+                    placeholder="Anarana feno" 
+                    placeholderTextColor="#888" 
+                    value={personData.anarana} 
+                    onChangeText={(t) => setPersonData({...personData, anarana: t})} 
+                  />
                   
                   <TouchableOpacity style={styles.dropdownSelector} onPress={() => openGenericDropdown("tetikasa")}>
-                    <Text style={{ color: '#000000', fontSize: 15 }}>{newTetikasa || "Tetikasa (Kitiho)"}</Text>
+                    <Text style={{ color: '#000000', fontSize: 15 }}>{personData.tetikasa || "Tetikasa (Kitiho)"}</Text>
                     <MaterialCommunityIcons name="arrow-down-drop-circle-outline" size={20} color="#666" />
                   </TouchableOpacity>
 
                   <Text style={styles.formMiniTitle}>Toerana (Sivana mifandray)</Text>
                   
                   <TouchableOpacity style={styles.dropdownSelector} onPress={() => openGenericDropdown("province")}>
-                    <Text style={{ color: '#000000', fontSize: 15 }}>{newProvince || "Faritany / Province (Kitiho)"}</Text>
+                    <Text style={{ color: '#000000', fontSize: 15 }}>{personData.province || "Faritany / Province (Kitiho)"}</Text>
                     <MaterialCommunityIcons name="arrow-down-drop-circle-outline" size={20} color="#666" />
                   </TouchableOpacity>
 
                   <TouchableOpacity style={styles.dropdownSelector} onPress={() => openGenericDropdown("region")}>
-                    <Text style={{ color: '#000000', fontSize: 15 }}>{newRegion || "Faritra / Région (Kitiho)"}</Text>
+                    <Text style={{ color: '#000000', fontSize: 15 }}>{personData.region || "Faritra / Région (Kitiho)"}</Text>
                     <MaterialCommunityIcons name="arrow-down-drop-circle-outline" size={20} color="#666" />
                   </TouchableOpacity>
 
                   <TouchableOpacity style={styles.dropdownSelector} onPress={() => openGenericDropdown("district")}>
-                    <Text style={{ color: '#000000', fontSize: 15 }}>{newDistrict || "Distrika / District (Kitiho)"}</Text>
+                    <Text style={{ color: '#000000', fontSize: 15 }}>{personData.district || "Distrika / District (Kitiho)"}</Text>
                     <MaterialCommunityIcons name="arrow-down-drop-circle-outline" size={20} color="#666" />
                   </TouchableOpacity>
 
                   <TouchableOpacity style={styles.dropdownSelector} onPress={() => openGenericDropdown("commune")}>
-                    <Text style={{ color: '#000000', fontSize: 15 }}>{newCommune || "Kaominina / Commune (Kitiho)"}</Text>
+                    <Text style={{ color: '#000000', fontSize: 15 }}>{personData.commune || "Kaominina / Commune (Kitiho)"}</Text>
                     <MaterialCommunityIcons name="arrow-down-drop-circle-outline" size={20} color="#666" />
                   </TouchableOpacity>
 
-                  <TextInput style={styles.modalInput} placeholder="Fokontany" placeholderTextColor="#888" value={newFokontany} onChangeText={setNewFokontany} />
+                  <TextInput 
+                    style={styles.modalInput} 
+                    placeholder="Fokontany" 
+                    placeholderTextColor="#888" 
+                    value={personData.fokontany} 
+                    onChangeText={(t) => setPersonData({...personData, fokontany: t})} 
+                  />
 
                   <Text style={styles.formMiniTitle}>Momba ny CIN (Sivana Daty JJ/MM/AAAA)</Text>
-                  <TextInput style={styles.modalInput} placeholder="Nomeraon'ny CIN" placeholderTextColor="#888" keyboardType="numeric" value={newCin} onChangeText={setNewCin} />
+                  <TextInput 
+                    style={styles.modalInput} 
+                    placeholder="Nomeraon'ny CIN" 
+                    placeholderTextColor="#888" 
+                    keyboardType="numeric" 
+                    value={personData.cin} 
+                    onChangeText={(t) => setPersonData({...personData, cin: t})} 
+                  />
                   <TextInput 
                     style={styles.modalInput} 
                     placeholder="Daty namoahana (JJ/MM/AAAA)" 
                     placeholderTextColor="#888"
                     keyboardType="numeric"
-                    value={newDateDelivrance} 
-                    onChangeText={(t) => setNewDateDelivrance(format_JJ_MM_AAAA(t))} 
+                    value={personData.date_delivrance} 
+                    onChangeText={(t) => setPersonData({...personData, date_delivrance: format_JJ_MM_AAAA(t)})} 
                   />
-                  <TextInput style={styles.modalInput} placeholder="Toerana namoahana azy" placeholderTextColor="#888" value={newLieuDelivrance} onChangeText={setNewLieuDelivrance} />
+                  <TextInput 
+                    style={styles.modalInput} 
+                    placeholder="Toerana namoahana azy" 
+                    placeholderTextColor="#888" 
+                    value={personData.lieu_delivrance} 
+                    onChangeText={(t) => setPersonData({...personData, lieu_delivrance: t})} 
+                  />
 
                   <View style={styles.switchContainer}>
                     <Text style={{ fontSize: 15, color: '#4a5568' }}>Duplicata ve ilay CIN?</Text>
-                    <Switch value={newIsDuplicata} onValueChange={(val) => setNewIsDuplicata(val)} />
+                    <Switch 
+                      value={personData.is_duplicata} 
+                      onValueChange={(val) => setPersonData({...personData, is_duplicata: val})} 
+                    />
                   </View>
 
-                  {newIsDuplicata && (
+                  {personData.is_duplicata && (
                     <View>
                       <TextInput 
                         style={styles.modalInput} 
                         placeholder="Daty Duplicata (JJ/MM/AAAA)" 
                         placeholderTextColor="#888"
                         keyboardType="numeric"
-                        value={newDateDuplicata} 
-                        onChangeText={(t) => setNewDateDuplicata(format_JJ_MM_AAAA(t))} 
+                        value={personData.date_duplicata} 
+                        onChangeText={(t) => setPersonData({...personData, date_duplicata: format_JJ_MM_AAAA(t)})} 
                       />
-                      <TextInput style={styles.modalInput} placeholder="Toerana Duplicata" placeholderTextColor="#888" value={newLieuDuplicata} onChangeText={setNewLieuDuplicata} />
+                      <TextInput 
+                        style={styles.modalInput} 
+                        placeholder="Toerana Duplicata" 
+                        placeholderTextColor="#888" 
+                        value={personData.lieu_duplicata} 
+                        onChangeText={(t) => setPersonData({...personData, lieu_duplicata: t})} 
+                      />
                     </View>
                   )}
 
-                  <TextInput style={styles.modalInput} placeholder="Laharana Telefaonina" placeholderTextColor="#888" keyboardType="phone-pad" value={newTelephone} onChangeText={setNewTelephone} />
+                  <TextInput 
+                    style={styles.modalInput} 
+                    placeholder="Laharana Telefaonina" 
+                    placeholderTextColor="#888" 
+                    keyboardType="phone-pad" 
+                    value={personData.telephone} 
+                    onChangeText={(t) => setPersonData({...personData, telephone: t})} 
+                  />
                 </ScrollView>
 
                 <View style={styles.modalButtons}>
@@ -746,69 +821,93 @@ export default function App() {
                 <Text style={styles.modalTitle}>Hanova mombamomba ny Enquête ({selectedPersonId})</Text>
                 
                 <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
-                  <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#333', marginBottom: 10 }}>Anarana: {newAnarana}</Text>
+                  {/* Anarana dia tsy mila ovaina eto fa aseho fotsiny */}
+                  <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#333', marginBottom: 10 }}>
+                    Anarana: {personData.anarana}
+                  </Text>
 
-                  <Text style={styles.formMiniTitle}>Toerana Vaovao (Sivana mifandray)</Text>
+                  <Text style={styles.formMiniTitle}>Toerana Vaovao</Text>
                   
-                  <TouchableOpacity style={styles.dropdownSelector} onPress={() => openGenericDropdown("province")}>
-                    <Text style={{ color: '#000000', fontSize: 15 }}>{newProvince || "Faritany / Province (Kitiho)"}</Text>
-                    <MaterialCommunityIcons name="arrow-down-drop-circle-outline" size={20} color="#666" />
-                  </TouchableOpacity>
+                  {["province", "region", "district", "commune"].map((field) => (
+                    <TouchableOpacity key={field} style={styles.dropdownSelector} onPress={() => openGenericDropdown(field)}>
+                      <Text style={{ color: '#000000', fontSize: 15 }}>
+                        {personData[field] || `${field.charAt(0).toUpperCase() + field.slice(1)} (Kitiho)`}
+                      </Text>
+                      <MaterialCommunityIcons name="arrow-down-drop-circle-outline" size={20} color="#666" />
+                    </TouchableOpacity>
+                  ))}
 
-                  <TouchableOpacity style={styles.dropdownSelector} onPress={() => openGenericDropdown("region")}>
-                    <Text style={{ color: '#000000', fontSize: 15 }}>{newRegion || "Faritra / Région (Kitiho)"}</Text>
-                    <MaterialCommunityIcons name="arrow-down-drop-circle-outline" size={20} color="#666" />
-                  </TouchableOpacity>
+                  <TextInput 
+                    style={styles.modalInput} 
+                    placeholder="Fokontany" 
+                    value={personData.fokontany} 
+                    onChangeText={(t) => setPersonData({...personData, fokontany: t})} 
+                  />
 
-                  <TouchableOpacity style={styles.dropdownSelector} onPress={() => openGenericDropdown("district")}>
-                    <Text style={{ color: '#000000', fontSize: 15 }}>{newDistrict || "Distrika / District (Kitiho)"}</Text>
-                    <MaterialCommunityIcons name="arrow-down-drop-circle-outline" size={20} color="#666" />
-                  </TouchableOpacity>
-
-                  <TouchableOpacity style={styles.dropdownSelector} onPress={() => openGenericDropdown("commune")}>
-                    <Text style={{ color: '#000000', fontSize: 15 }}>{newCommune || "Kaominina / Commune (Kitiho)"}</Text>
-                    <MaterialCommunityIcons name="arrow-down-drop-circle-outline" size={20} color="#666" />
-                  </TouchableOpacity>
-
-                  <TextInput style={styles.modalInput} placeholder="Fokontany" placeholderTextColor="#888" value={newFokontany} onChangeText={setNewFokontany} />
-
-                  <Text style={styles.formMiniTitle}>Momba ny CIN (Sivana Daty JJ/MM/AAAA)</Text>
-                  <TextInput style={styles.modalInput} placeholder="Nomeraon'ny CIN" placeholderTextColor="#888" keyboardType="numeric" value={newCin} onChangeText={setNewCin} />
+                  <Text style={styles.formMiniTitle}>Momba ny CIN</Text>
+                  <TextInput 
+                    style={styles.modalInput} 
+                    placeholder="Nomeraon'ny CIN" 
+                    keyboardType="numeric" 
+                    value={personData.cin} 
+                    onChangeText={(t) => setPersonData({...personData, cin: t})} 
+                  />
                   <TextInput 
                     style={styles.modalInput} 
                     placeholder="Daty namoahana (JJ/MM/AAAA)" 
-                    placeholderTextColor="#888"
                     keyboardType="numeric"
-                    value={newDateDelivrance} 
-                    onChangeText={(t) => setNewDateDelivrance(format_JJ_MM_AAAA(t))} 
+                    value={personData.date_delivrance} 
+                    onChangeText={(t) => setPersonData({...personData, date_delivrance: format_JJ_MM_AAAA(t)})} 
                   />
-                  <TextInput style={styles.modalInput} placeholder="Toerana namoahana azy" placeholderTextColor="#888" value={newLieuDelivrance} onChangeText={setNewLieuDelivrance} />
+                  <TextInput 
+                    style={styles.modalInput} 
+                    placeholder="Toerana namoahana azy" 
+                    value={personData.lieu_delivrance} 
+                    onChangeText={(t) => setPersonData({...personData, lieu_delivrance: t})} 
+                  />
 
                   <View style={styles.switchContainer}>
                     <Text style={{ fontSize: 15, color: '#4a5568' }}>Duplicata ve ilay CIN?</Text>
-                    <Switch value={newIsDuplicata} onValueChange={(val) => setNewIsDuplicata(val)} />
+                    <Switch 
+                      value={personData.is_duplicata} 
+                      onValueChange={(val) => setPersonData({...personData, is_duplicata: val})} 
+                    />
                   </View>
 
-                  {newIsDuplicata && (
+                  {personData.is_duplicata && (
                     <View>
                       <TextInput 
                         style={styles.modalInput} 
                         placeholder="Daty Duplicata (JJ/MM/AAAA)" 
-                        placeholderTextColor="#888"
                         keyboardType="numeric"
-                        value={newDateDuplicata} 
-                        onChangeText={(t) => setNewDateDuplicata(format_JJ_MM_AAAA(t))} 
+                        value={personData.date_duplicata} 
+                        onChangeText={(t) => setPersonData({...personData, date_duplicata: format_JJ_MM_AAAA(t)})} 
                       />
-                      <TextInput style={styles.modalInput} placeholder="Toerana Duplicata" placeholderTextColor="#888" value={newLieuDuplicata} onChangeText={setNewLieuDuplicata} />
+                      <TextInput 
+                        style={styles.modalInput} 
+                        placeholder="Toerana Duplicata" 
+                        value={personData.lieu_duplicata} 
+                        onChangeText={(t) => setPersonData({...personData, lieu_duplicata: t})} 
+                      />
                     </View>
                   )}
 
-                  <TextInput style={styles.modalInput} placeholder="Laharana Telefaonina" placeholderTextColor="#888" keyboardType="phone-pad" value={newTelephone} onChangeText={setNewTelephone} />
+                  <TextInput 
+                    style={styles.modalInput} 
+                    placeholder="Laharana Telefaonina" 
+                    keyboardType="phone-pad" 
+                    value={personData.telephone} 
+                    onChangeText={(t) => setPersonData({...personData, telephone: t})} 
+                  />
                 </ScrollView>
 
                 <View style={styles.modalButtons}>
-                  <TouchableOpacity onPress={() => setModalEditPerson(false)} style={styles.btnFlat}><Text style={{ color: '#666', fontWeight: 'bold' }}>HAKATONA</Text></TouchableOpacity>
-                  <TouchableOpacity onPress={handleUpdatePerson} style={styles.btnRaised}><Text style={{ color: '#fff', fontWeight: 'bold' }}>OK HANOVA</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={() => setModalEditPerson(false)} style={styles.btnFlat}>
+                    <Text style={{ color: '#666', fontWeight: 'bold' }}>HAKATONA</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={handleUpdatePerson} style={styles.btnRaised}>
+                    <Text style={{ color: '#fff', fontWeight: 'bold' }}>OK HANOVA</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
             </KeyboardAvoidingView>
@@ -822,14 +921,34 @@ export default function App() {
               <Text style={{ fontWeight: 'bold', padding: 10, color: '#ff9900', textTransform: 'uppercase', textAlign: 'center' }}>
                 Safidio ny {currentDropdownType}
               </Text>
+              
+              {/* Eto ny TextInput hanaovana Autocomplete */}
+              <TextInput 
+                style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 8, margin: 10 }}
+                placeholder="Tadiavo..."
+                onChangeText={(text) => setFilterText(text)}
+                value={filterText}
+              />
+
               <ScrollView style={{ maxHeight: 280 }} showsVerticalScrollIndicator={true}>
-                {genericDropdownList.map((item, idx) => (
-                  <TouchableOpacity key={idx} style={styles.dropdownItem} onPress={() => handleSelectGenericItem(item)}>
-                    <Text style={{ fontSize: 16, color: '#000000' }}>{item}</Text>
-                  </TouchableOpacity>
+                {/* Eto no misy ny sivana (filter) */}
+                {genericDropdownList
+                  .filter(item => item.toLowerCase().includes(filterText.toLowerCase()))
+                  .map((item, idx) => (
+                    <TouchableOpacity 
+                      key={idx} 
+                      style={styles.dropdownItem} 
+                      onPress={() => {
+                        handleSelectGenericItem(item);
+                        setFilterText(""); // Reset rehefa avy nifidy
+                      }}
+                    >
+                      <Text style={{ fontSize: 16, color: '#000000' }}>{item}</Text>
+                    </TouchableOpacity>
                 ))}
               </ScrollView>
-              <TouchableOpacity onPress={() => setModalSelectGeneric(false)} style={{ alignItems: 'center', padding: 12, marginTop: 5 }}>
+
+              <TouchableOpacity onPress={() => { setModalSelectGeneric(false); setFilterText(""); }} style={{ alignItems: 'center', padding: 12, marginTop: 5 }}>
                 <Text style={{ color: 'red', fontWeight: 'bold' }}>Hiverina</Text>
               </TouchableOpacity>
             </View>
