@@ -1,29 +1,10 @@
 {
   "expo": {
-    "name": "base-amm",
-    "slug": "snack-d781bb19-2497-4e7f-980c-d2a862f80ec9",
-    "version": "3.1.0",
-    "orientation": "portrait",
-    "icon": "./assets/logo.png",
-    "userInterfaceStyle": "light",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/logo2.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
-    "ios": {
-      "supportsTablet": true
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/logo.png",
-        "backgroundColor": "#ffffff"
-      },
-      "edgeToEdgeEnabled": true
-    },
+    "name": "amm-erp",
+    "slug": "amm-erp",
+    "version": "1.0.0",
     "web": {
-      "favicon": "./assets/logo.png"
+      "bundler": "metro"
     }
   }
 }
