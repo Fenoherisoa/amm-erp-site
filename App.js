@@ -1354,11 +1354,146 @@ export default function WebDashboard() {
       link.click();
       document.body.removeChild(link);
     };
+// ===========================================================
+// SECTION 8.7;1 parameter general ETO NY AN4NY PARAMETRE
+// ===========================================================
+    const [allDossiers, setAllDossiers] = useState([]);
+    const [filteredDossiers, setFilteredDossiers] = useState([]);
+
+    // Apetraho ao anaty component-nao (eo akaikin'ireo useState hafa)
+    useEffect(() => {
+        if (subTab === "DOSSIER") {
+            fetchDossiers();
+        }
+    }, [subTab]); // Isaky ny miova ny subTab, dia mi-fetch izy
+
+    const fetchDossiers = async () => {
+        try {
+            const response = await fetch(`${BASE_URL}/dossiers.json`);
+            const data = await response.json();
+            
+            console.log("Data azo avy amin'ny Firebase:", data); // ZAHY ETO IZAO: raha "null" dia midika fa tsy misy data ao
+
+            if (data) {
+                const dossiersList = Object.entries(data).map(([key, value]) => ({
+                    key: key,
+                    ...value
+                }));
+                setAllDossiers(dossiersList);
+                setFilteredDossiers(dossiersList);
+            } else {
+                setAllDossiers([]);
+                setFilteredDossiers([]);
+            }
+        } catch (error) {
+            console.error("Diso ny fandraisana data:", error);
+        }
+    };
+
+    const deleteDossier = async (dossierItem) => {
+      if (window.confirm(`Hofafana tokoa ve ny dossier ${dossierItem.numero}?`)) {
+        try {
+          // Mivantana amin'ny key (tsy mila mikaroka intsony)
+          await fetch(`${BASE_URL}/dossiers/${dossierItem.key}.json`, {
+            method: 'DELETE'
+          });
+          
+          // Refresh ny UI avy hatrany
+          setAllDossiers(prev => prev.filter(d => d.key !== dossierItem.key));
+          setFilteredDossiers(prev => prev.filter(d => d.key !== dossierItem.key));
+          
+          alert("Voafafa ny dossier!");
+        } catch (error) {
+          console.error("Error deleting:", error);
+        }
+      }
+    };
 
   // =========================================================================
   // SECTION 9 : WEB EXPORTATION TO PDF (PRINT GENERATORS)
   // =========================================================================
-  const exportFicheBankStyle = (member, assoData) => {
+  const saveDossierToHistory = async (member, assoData, typeDossier) => {
+    const mem = member || {}; 
+    const now = new Date();
+    const mois = String(now.getMonth() + 1).padStart(2, '0');
+    const annee = now.getFullYear();
+    const matricule = mem.matricule || mem.id || 'N/A';
+
+    // 1. Fakana ny data efa misy
+    const snapshot = await fetch(`${BASE_URL}/dossiers.json`);
+    const data = await snapshot.json();
+    
+    // 2. Manisa ny dossier araka ny TYPE sy VOLANA/TAONA
+    let count = 1;
+    if (data) {
+        count = Object.values(data).filter(d => 
+            d.type === typeDossier && // Zava-dehibe ny fanasarahana eto
+            d.mois === mois && 
+            d.annee === annee
+        ).length + 1;
+    }
+    
+    const sequence = String(count).padStart(3, '0');
+    
+    // 3. Mamorona ny Numero
+    const prefix = typeDossier === 'Adhesion' ? 'AMM-Adh' : 'AMM-ATT';
+    const numeroDossier = `${prefix}/${matricule}/${mois}-${annee}/${sequence}`;
+
+    const dossierData = {
+        numero: numeroDossier,
+        type: typeDossier, // 'Adhesion' na 'Attestation'
+        nom: mem.anarana,
+        matricule: matricule,
+        cin: mem.cin,
+        mois: mois,
+        annee: annee,
+        date_emission: new Date().toISOString(),
+        user_id: mem.id
+    };
+
+    await fetch(`${BASE_URL}/dossiers.json`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dossierData)
+    });
+
+    return numeroDossier;
+  };
+
+  // Ho an'ny Fiche Adhésion:
+  // Antsoy hoe: loadAndGenerateAttestation(item, 'Adhesion')
+
+  // Ho an'ny Attestation:
+  // Antsoy hoe: loadAndGenerateAttestation(item, 'Attestation')
+
+  const loadAndGenerateAttestation = async (item, typeDossier = 'Attestation') => {
+      const memberId = typeof item === 'object' ? (item.id || item.key) : item;
+      
+      try {
+          const [memberRes, assoRes] = await Promise.all([
+              fetch(`${BASE_URL}/olona/${memberId}.json`),
+              fetch(`${BASE_URL}/parametres.json`)
+          ]);
+
+          const mem = await memberRes.json();
+          const info = await assoRes.json();
+
+          // 1. Mamorona sy mitahiry ny numero dossier
+          const numDossier = await saveDossierToHistory(mem, info, typeDossier);
+
+          // 2. Misafidy ny layout (Fiche vs Attestation)
+          if (typeDossier === 'Adhesion') {
+              exportFicheBankStyle(mem, info, numDossier);
+          } else {
+              generateAttestation(mem, info, numDossier);
+          }
+
+      } catch (error) {
+          console.error("Error:", error);
+      }
+  };
+
+  const exportFicheBankStyle = (member, assoData, numDossier) => {
     const info = assoData || {};
     const mem = member || {};
     const today = new Date().toLocaleDateString('fr-FR');
@@ -1417,6 +1552,10 @@ export default function WebDashboard() {
             </div>
 
             <div class="doc-title">Certificat d'Adhésion et d'Engagement</div>
+
+            <div style="text-align: right; font-size: 10px; color: #888;">
+                Réf Dossier: ${numDossier}
+            </div>
             
             <div class="section-label">IDENTIFICATION DU MEMBRE</div>
             <div class="value" style="font-size: 18px; color: #0d3373;">${mem.anarana || '---'} né(é) le ${mem.date_naissance} à ${mem.lieu_naissance}</div>
@@ -1477,42 +1616,8 @@ export default function WebDashboard() {
   // =========================================================================
   // SECTION 9 : WEB EXPORTATION TO PDF (ATTESTATION)
   // =========================================================================
-  // Aza adino ny mamaritra ny base64Logo eto (ohatra: const base64Logo = "iVBORw0K...";)
-  const loadAndGenerateAttestation = async (item) => {
-    // Raha "item" no mandalo, alao ny ID avy ao aminy
-    // (Aza adino ny manolo ny 'item.id' amin'ny anarana marina misy ao amin'ny item-nao)
-    const memberId = typeof item === 'object' ? (item.id || item.key) : item;
-
-    if (!memberId) {
-        alert("Tsy hita ny ID-n'ny mpikambana.");
-        return;
-    }
-
-    try {
-        const [memberRes, assoRes] = await Promise.all([
-            fetch(`${BASE_URL}/olona/${memberId}.json`),
-            fetch(`${BASE_URL}/parametres.json`)
-        ]);
-
-        const member1 = await memberRes.json();
-        console.log("Data avy amin'ny Firebase:", member1);
-        const assoData = await assoRes.json();
-
-        if (!member1) {
-            alert("Tsy hita tao amin'ny database ny mombamomba azy.");
-            return;
-        }
-
-        // Antsoy ny fonction miaraka amin'ny logo
-        generateAttestation(member1, assoData || {});
-
-    } catch (error) {
-        console.error("Error:", error);
-        alert("Nisy olana tamin'ny fakana data.");
-    }
-  };
   
-  const generateAttestation = (member1, assoData) => {
+  const generateAttestation = (member1, assoData, numDossier) => {
     const info = assoData || {};
     const mem = member1 || {};
     const today = new Date().toLocaleDateString('fr-FR');
@@ -1567,7 +1672,11 @@ export default function WebDashboard() {
               <div id="qrcode"></div>
             </div>
 
-            <div class="doc-title">Attestation du membre</div>
+            <div class="doc-title">Attestation du membre </div>
+
+            <div style="text-align: right; font-size: 10px; color: #888;">
+                Réf Dossier: ${numDossier}
+            </div>
             
             <div class="section-label">IDENTIFICATION DU MEMBRE</div>
             <div class="value" style="font-size: 18px; color: #0d3373;">${mem.anarana || '---'}</div>
@@ -1691,9 +1800,10 @@ const exportEnquetePDF = (enquete) => {
         </div>
 
         <div class="info-grid">
+        <div class="info-item"><b>Id de l'enquete :</b> ${enquete.unique_id || ''}</div>
           <div class="info-item"><b>Anarana nodiahadina :</b> ${enquete.anarana_olona || ''}</div>
           <div class="info-item"><b>Matricule raikitra :</b> ${enquete.matricule_olona || ''}</div>
-          <div class="info-item"><b>Tetikasa voafidy :</b> ${enquete.tetikasa_olona || ''}</div>
+          <div class="info-item"><b>Tetikasa voafidy :</b> ${enquete.tetikasa_olona || ''}, ny fanohanana ilaina dia ${enquete.ezaka_ilaina || ''}</div>
           <div class="info-item"><b>Sokajy mponina :</b> ${enquete.sokajy_mponina || ''}</div>
           <div class="info-item"><b>Fidiram-bola :</b> ${enquete.fidiram_bola ? Number(enquete.fidiram_bola).toLocaleString('fr-FR') : 0} Ar</div>
           <div class="info-item"><b>Enquêteur nanao azy :</b> ${enquete.enqueteur || ''}</div>
@@ -1701,7 +1811,7 @@ const exportEnquetePDF = (enquete) => {
           <div class="info-item"><b>Daty nampidirana :</b> ${enquete.submitted_at ? new Date(enquete.submitted_at).toLocaleString('fr-FR') : ''}</div>
           
           <div class="full-width">
-            📍 <b>Toerana & Adiresy feno :</b> ${enquete.adresse_exacte || ''}, ${enquete.fokontany || ''}, ${enquete.commune || ''}, ${enquete.distrika || ''}
+            📍 <b>Toerana & Adiresy feno :</b> ${enquete.adresse_exacte || ''}, ${enquete.fokontany || ''}, ${enquete.commune || ''}, ${enquete.distrika || ''}, ${enquete.faritra || ''}, ${enquete.faritany || ''}
             ${enquete.gps ? `<br><span style="font-family: monospace; color: #64748b; font-size: 11px;">[Coordonnées GPS: Latitude ${enquete.gps.latitude} | Longitude ${enquete.gps.longitude}]</span>` : ''}
           </div>
         </div>
@@ -2593,16 +2703,7 @@ const exportEnquetePDF = (enquete) => {
                       <TouchableOpacity onPress={() => { setSelectedMember(item); setModalMemberDetail(true); }}><MaterialCommunityIcons name="eye" size={18} color="#0d3373" /></TouchableOpacity>
                       <TouchableOpacity onPress={() => startEditMember(item)}><MaterialCommunityIcons name="pencil" size={18} color="orange" /></TouchableOpacity>
                       <TouchableOpacity 
-                        onPress={() => exportFicheBankStyle(item, {
-                          nom_association: formAsso,
-                          ideologie: formIdeologie,
-                          decret: formDecret,
-                          date_decret: formDateDecret,
-                          siege_social: formSiege,
-                          lieu: formLieu,
-                          email: formEmail,
-                          telephone: formTel
-                        })}
+                        onPress={() => loadAndGenerateAttestation(item, 'Adhesion')}
                       >
                         <MaterialCommunityIcons name="printer-check" size={18} color="green" />
                       </TouchableOpacity>
@@ -2620,6 +2721,22 @@ const exportEnquetePDF = (enquete) => {
             {/* HEADER SY FILTRE */}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
               <Text style={styles.sectionTitleWeb}>SITUATION ENQUETES ({allEnquetes.length})</Text>
+
+              {/* SEARCH BAR */}
+              <TextInput 
+                placeholder="Fikarohana (Anarana, Fokontany, ID, Matricule)..." 
+                style={{ 
+                  width: '50%',
+                  padding: 10, 
+                  borderWidth: 1, 
+                  borderColor: '#ccc', 
+                  borderRadius: 5, 
+                  marginBottom: 10, 
+                  backgroundColor: '#fff' 
+                }}
+                onChangeText={(text) => setSearchQuery(text)}
+                value={searchQuery}
+              />
               
               <View style={{ flexDirection: 'row', gap: 10 }}>
                 {/* FILTRE STATUS */}
@@ -2650,28 +2767,50 @@ const exportEnquetePDF = (enquete) => {
 
             {/* HEADER TABILAO */}
             <View style={styles.tableHeaderRow}>
-              <Text style={[styles.tableHeadCell, { flex: 2 }]}>Olona Nodiahadina</Text>
+              <Text style={[styles.tableHeadCell, { flex: 2 }]}>Anarana / ID</Text>
+              <Text style={[styles.tableHeadCell, { flex: 1.5 }]}>Matricule / Fokontany</Text>
               <Text style={[styles.tableHeadCell, { flex: 1 }]}>Points</Text>
-              <Text style={[styles.tableHeadCell, { flex: 1.5 }]}>Status</Text>
+              <Text style={[styles.tableHeadCell, { flex: 1 }]}>Status</Text>
               <Text style={[styles.tableHeadCell, { flex: 2.5, textAlign: 'center' }]}>Action</Text>
             </View>
 
             {/* LISTA MISY FILTRE */}
             <FlatList 
-              data={allEnquetes.filter(e => statusFilter === "ALL" ? true : (e.status || "PENDING") === statusFilter)}
+              data={allEnquetes.filter(e => {
+                const matchStatus = statusFilter === "ALL" ? true : (e.status || "PENDING") === statusFilter;
+                const matchSearch = 
+                  e.anarana_olona?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  e.fokontany?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  e.id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  e.matricule_olona?.toLowerCase().includes(searchQuery.toLowerCase());
+                return matchStatus && matchSearch;
+              })}
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => (
                 <View style={styles.tableDataRow}>
-                  <Text style={[styles.tableDataCell, { flex: 2, fontWeight: 'bold' }]}>{item.anarana_olona || ''}</Text>
-                  <Text style={[styles.tableDataCell, { flex: 1 }]}>{item.points_calculated || 0} Pts</Text>
-                  <Text style={[styles.tableDataCell, { flex: 1.5, fontWeight: 'bold', color: item.status === "REJECTED" ? "red" : (item.status === "VALIDATED" ? "green" : "orange") }]}>
+                  {/* ANARANA SY ID */}
+                  <View style={[styles.tableDataCell, { flex: 2, flexDirection: 'column' }]}>
+                    <Text style={{ fontWeight: 'bold', fontSize: 13 }}>{item.anarana_olona}</Text>
+                    <Text style={{ fontSize: 10, color: '#64748b' }}>ID: {item.unique_id}</Text>
+                  </View>
+
+                  {/* MATRICULE SY FOKONTANY*/}
+                  <View style={[styles.tableDataCell, { flex: 1.5, flexDirection: 'column' }]}>
+                    <Text style={{ fontSize: 12 }}>{item.matricule_olona || '-'}</Text>
+                    <Text style={{ fontSize: 11, color: '#64748b' }}>Fokontany: {item.fokontany || '-'}</Text>
+                  </View>
+
+                  <Text style={[styles.tableDataCell, { flex: 1, textAlign: 'center' }]}>{item.points_calculated || 0} Pts</Text>
+                  
+                  <Text style={[styles.tableDataCell, { flex: 1, fontWeight: 'bold', fontSize: 11, color: item.status === "REJECTED" ? "red" : (item.status === "VALIDATED" ? "green" : "orange") }]}>
                     {item.status || 'PENDING'}
                   </Text>
-                  <View style={{ flex: 2.5, flexDirection: 'row', justifyContent: 'space-between', gap: 5 }}>
-                    <TouchableOpacity style={[styles.miniActionBtn, { backgroundColor: '#0f172a' }]} onPress={() => { setSelectedEnquete(item); setModalEnqueteDetail(true); }}><Text style={{ color: '#fff', fontSize: 11 }}>FIJERENA</Text></TouchableOpacity>
-                    <TouchableOpacity style={[styles.miniActionBtn, { backgroundColor: 'green' }]} onPress={() => handleUpdateStatusEnquete(item.id, 'VALIDATED')}><Text style={{ color: '#fff', fontSize: 11 }}>VALIDE</Text></TouchableOpacity>
-                    <TouchableOpacity style={[styles.miniActionBtn, { backgroundColor: 'orange' }]} onPress={() => handleUpdateStatusEnquete(item.id, 'REJECTED')}><Text style={{ color: '#fff', fontSize: 11 }}>REJETE</Text></TouchableOpacity>
-                    <TouchableOpacity style={[styles.miniActionBtn, { backgroundColor: '#ff4d4d' }]} onPress={() => handleDeleteEnquete(item.id, item.matricule_olona)}><Text style={{ color: '#fff', fontSize: 11 }}>FAFANA</Text></TouchableOpacity>
+
+                  {/* ACTIONS */}
+                  <View style={{ flex: 2.5, flexDirection: 'row', justifyContent: 'center', gap: 5 }}>
+                    <TouchableOpacity style={[styles.miniActionBtn, { backgroundColor: '#0f172a' }]} onPress={() => { setSelectedEnquete(item); setModalEnqueteDetail(true); }}><Text style={{ color: '#fff', fontSize: 10 }}>Fijery</Text></TouchableOpacity>
+                    <TouchableOpacity style={[styles.miniActionBtn, { backgroundColor: 'green' }]} onPress={() => handleUpdateStatusEnquete(item.id, 'VALIDATED')}><Text style={{ color: '#fff', fontSize: 10 }}>Valide</Text></TouchableOpacity>
+                    <TouchableOpacity style={[styles.miniActionBtn, { backgroundColor: '#ff4d4d' }]} onPress={() => handleDeleteEnquete(item.id, item.matricule_olona)}><Text style={{ color: '#fff', fontSize: 10 }}>Fafana</Text></TouchableOpacity>
                   </View>
                 </View>
               )}
@@ -3062,7 +3201,7 @@ const exportEnquetePDF = (enquete) => {
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                   <Text style={styles.sectionTitleWeb}>⚙️ PARAMÈTRES DE L'ASSOCIATION</Text>
                   
-                  {subTab === 'infos' && (
+                  {subTab === 'INFOS' && (
                     <TouchableOpacity 
                       onPress={() => setIsEditing(!isEditing)} 
                       style={{ 
@@ -3081,7 +3220,7 @@ const exportEnquetePDF = (enquete) => {
 
                 {/* TAB NAVIGATION */}
                 <View style={{ flexDirection: 'row', marginBottom: 30, borderBottomWidth: 1, borderColor: '#e2e8f0' }}>
-                  {['infos', 'donnees', 'mailing'].map((tab) => (
+                  {['INFOS', 'DONNEE', 'DOSSIER'].map((tab) => (
                     <TouchableOpacity 
                       key={tab} 
                       onPress={() => {
@@ -3108,11 +3247,11 @@ const exportEnquetePDF = (enquete) => {
                 </View>
 
                 {/* CONTENT SECTION - DONNEES SY MAILING (Tsy misy bouton) */}
-                {(subTab === "donnees" || subTab === "Staff") && (
+                {(subTab === "DONNEE" || subTab === "DOSSIER") && (
                   <View style={{ padding: 20, alignItems: 'center' }}>
                     <Text style={{ color: '#64748b' }}>Information consultable uniquement.</Text>
                     {/* Eto ianao no mametraka ny data-nao ho an'ny donnees na mailing */}
-                    {subTab === "donnees" && (
+                    {subTab === "DONNEE" && (
                       <View style={{ flex: 1, padding: 20 }}>
                         
                         {/* --- 1. SEARCH BAR --- */}
@@ -3154,7 +3293,7 @@ const exportEnquetePDF = (enquete) => {
                         {/* --- STICKY TABLE HEADER --- */}
                         <View style={{ backgroundColor: '#e2e8f0', paddingVertical: 12, flexDirection: 'row', borderTopLeftRadius: 5, borderTopRightRadius: 5 }}>
                           <Text style={{ flex: 1, fontWeight: 'bold', textAlign: 'center', fontSize: 13 }}>Matricule</Text>
-                          <Text style={{ flex: 2.5, fontWeight: 'bold', textAlign: 'center', fontSize: 13 }}>Nom</Text>
+                          <Text style={{ flex: 3, fontWeight: 'bold', textAlign: 'center', fontSize: 13 }}>Nom</Text>
                           <Text style={{ flex: 1, fontWeight: 'bold', textAlign: 'center', fontSize: 13 }}>CIN</Text>
                           <Text style={{ flex: 1, fontWeight: 'bold', textAlign: 'center', fontSize: 13 }}>ID</Text>
                           <Text style={{ flex: 1, fontWeight: 'bold', textAlign: 'center', fontSize: 13 }}>Tetikasa</Text>
@@ -3172,7 +3311,7 @@ const exportEnquetePDF = (enquete) => {
                             renderItem={({ item }) => (
                               <View style={{ flexDirection: 'row', paddingVertical: 10, borderBottomWidth: 1, borderColor: '#f1f5f9', alignItems: 'center' }}>
                                 <Text style={{ flex: 1, textAlign: 'center', fontSize: 12 }}>{item.matricule}</Text>
-                                <Text style={{ flex: 2.5, textAlign: 'center', fontSize: 12, fontWeight: '600' }}>{item.anarana}</Text>
+                                <Text style={{ flex: 3, textAlign: 'center', fontSize: 12, fontWeight: '600' }}>{item.anarana}</Text>
                                 <Text style={{ flex: 1, textAlign: 'center', fontSize: 12 }}>{item.cin}</Text>
                                 <Text style={{ flex: 1, textAlign: 'center', fontSize: 12 }}>{item.id}</Text>
                                 <Text style={{ flex: 1, textAlign: 'center', fontSize: 12 }}>{item.tetikasa}</Text>
@@ -3194,7 +3333,7 @@ const exportEnquetePDF = (enquete) => {
                                   >
                                     <Text style={{ color: 'red', fontWeight: 'bold', fontSize: 12 }}>❌ Fafana</Text>
                                   </TouchableOpacity>
-                                  <TouchableOpacity onPress={() => loadAndGenerateAttestation(item)}>
+                                  <TouchableOpacity onPress={() => loadAndGenerateAttestation(item, 'Attestation')}>
                                     <Text style={{ color: 'blue', fontWeight: 'bold', fontSize: 12 }}>📄 Attestation</Text>
                                   </TouchableOpacity>
                                 </View>
@@ -3204,12 +3343,93 @@ const exportEnquetePDF = (enquete) => {
                         </View>
                       </View>
                     )}
+                    {/* Eto ianao no mametraka ny data-nao ho an'ny donnees na mailing */}
+
+                    {subTab === "DOSSIER" && (
+                      <View style={{ flex: 1, padding: 20 }}>
+                        
+                        {/* SEARCH BAR */}
+                        <TextInput 
+                          placeholder="Fikarohana Dossier (Numero, Nom, Matricule, CIN)..." 
+                          style={{ width: '100%', marginBottom: 20, height: 45, paddingHorizontal: 15, borderWidth: 1, borderColor: '#ccc', borderRadius: 5, backgroundColor: '#fff' }} 
+                          onChangeText={(text) => {
+                            const filtered = allDossiers.filter(d => 
+                              d.numero?.toLowerCase().includes(text.toLowerCase()) ||
+                              d.nom?.toLowerCase().includes(text.toLowerCase()) ||
+                              d.matricule?.toLowerCase().includes(text.toLowerCase()) ||
+                              d.cin?.toLowerCase().includes(text.toLowerCase())
+                            );
+                            setFilteredDossiers(filtered);
+                          }} 
+                        />
+
+                        {/* HEADER - Nampiasana ratio kely kokoa (1 hatramin'ny 3) */}
+                        <View style={{ 
+                          flexDirection: 'row', 
+                          backgroundColor: '#e2e8f0', 
+                          paddingVertical: 12, 
+                          borderTopLeftRadius: 5, 
+                          borderTopRightRadius: 5,
+                          borderWidth: 1,
+                          borderColor: '#cbd5e1'
+                        }}>
+                          <Text style={{ flex: 1.5, fontWeight: 'bold', textAlign: 'center', fontSize: 12 }}>Numéro</Text>
+                          <Text style={{ flex: 2, fontWeight: 'bold', textAlign: 'center', fontSize: 12 }}>Nom</Text>
+                          <Text style={{ flex: 1.2, fontWeight: 'bold', textAlign: 'center', fontSize: 12 }}>Matricule</Text>
+                          <Text style={{ flex: 1.2, fontWeight: 'bold', textAlign: 'center', fontSize: 12 }}>CIN</Text>
+                          <Text style={{ flex: 1, fontWeight: 'bold', textAlign: 'center', fontSize: 12 }}>DATE</Text>
+                          <Text style={{ flex: 1, fontWeight: 'bold', textAlign: 'center', fontSize: 12 }}>Type</Text>
+                          <Text style={{ flex: 1, fontWeight: 'bold', textAlign: 'center', fontSize: 12 }}>Actions</Text>
+                        </View>
+
+                        {/* LISTE */}
+                        <View style={{ 
+                          flex: 1, 
+                          backgroundColor: '#fff', 
+                          borderBottomLeftRadius: 5, 
+                          borderBottomRightRadius: 5, 
+                          borderLeftWidth: 1, 
+                          borderRightWidth: 1, 
+                          borderBottomWidth: 1, 
+                          borderColor: '#cbd5e1' 
+                        }}>
+                          <FlatList 
+                            data={filteredDossiers}
+                            keyExtractor={(item) => item.key || Math.random().toString()}
+                            renderItem={({ item }) => (
+                              <View style={{ 
+                                flexDirection: 'row', 
+                                paddingVertical: 10, 
+                                paddingHorizontal: 5,
+                                borderBottomWidth: 1, 
+                                borderColor: '#f1f5f9', 
+                                alignItems: 'center' 
+                              }}>
+                                <Text style={{ flex: 1.5, textAlign: 'center', fontSize: 11 }}>{item.numero}</Text>
+                                <Text style={{ flex: 2, textAlign: 'center', fontSize: 11, fontWeight: '500' }}>{item.nom}</Text>
+                                <Text style={{ flex: 1.2, textAlign: 'center', fontSize: 11 }}>{item.matricule}</Text>
+                                <Text style={{ flex: 1.2, textAlign: 'center', fontSize: 11 }}>{item.cin || '-'}</Text>
+                                <Text style={{ flex: 1, textAlign: 'center', fontSize: 11 }}>{item.date_emission || '-'}</Text>
+                                <Text style={{ flex: 1, textAlign: 'center', fontSize: 11 }}>{item.type}</Text>
+                                
+                                <View style={{ flex: 1, alignItems: 'center' }}>
+                                  <TouchableOpacity onPress={() => deleteDossier(item)}>
+                                    <Text style={{ color: 'red', fontWeight: 'bold', fontSize: 10 }}>❌ Fafana</Text>
+                                  </TouchableOpacity>
+                                </View>
+                              </View>
+                            )}
+                          />
+                        </View>
+                      </View>
+                    )}  
+
                   </View>
                 )}
 
                 {/* CONTENT SECTION - INFOS (Misy bouton) */}
                 {/* CONTENT SECTION - INFOS */}
-                {subTab === "infos" && (
+                {subTab === "INFOS" && (
                   <View style={{ width: '100%' }}>
                     {[
                       { label: "Nom de l'association", val: formAsso, setter: setFormAsso },
@@ -3512,14 +3732,15 @@ const exportEnquetePDF = (enquete) => {
             {selectedEnquete && (
               <ScrollView style={{ maxHeight: 420 }}>
                 {/* Momba ny Mpikambana sy ny Toerana */}
+                <Text style={styles.detailTextWeb}><b>ID:</b> {selectedEnquete.unique_id || ''}</Text>
                 <Text style={styles.detailTextWeb}><b>Anarana nodiahadina:</b> {selectedEnquete.anarana_olona || ''}</Text>
                 <Text style={styles.detailTextWeb}><b>Matricule raikitra:</b> {selectedEnquete.matricule_olona || ''}</Text>
-                <Text style={styles.detailTextWeb}><b>Tetikasa voafidy:</b> {selectedEnquete.tetikasa_olona || ''}</Text>
+                <Text style={styles.detailTextWeb}><b>Tetikasa voafidy:</b> {selectedEnquete.tetikasa_olona || ''}<b> mila </b>{selectedEnquete.ezaka_ilaina || ''}</Text>
                 <Text style={styles.detailTextWeb}><b>Sokajy mponina:</b> {selectedEnquete.sokajy_mponina || ''} ({selectedEnquete.fidiram_bola || 0} Ar)</Text>
                 <Text style={styles.detailTextWeb}><b>Status:</b> {selectedEnquete.status || 'PENDING'}</Text>
                 <Text style={styles.detailTextWeb}><b>Enquêteur:</b> {selectedEnquete.enqueteur || ''}</Text>
                 <Text style={styles.detailTextWeb}>
-                  <b>Toerana & GPS:</b> {selectedEnquete.adresse_exacte || ''}, {selectedEnquete.fokontany || ''}, {selectedEnquete.commune || ''} 
+                  <b>Toerana & GPS:</b> {selectedEnquete.adresse_exacte || ''}, {selectedEnquete.fokontany || ''}, {selectedEnquete.commune || ''}, {selectedEnquete.distrika || ''}, {selectedEnquete.faritra || ''}, {selectedEnquete.faritany || ''}    
                   {selectedEnquete.gps ? ` [Lat: ${selectedEnquete.gps.latitude} | Lon: ${selectedEnquete.gps.longitude}]` : ''}
                 </Text>
 
