@@ -145,7 +145,7 @@ export default function WebDashboard() {
   const [selectedReg, setSelectedReg] = useState("");
   const [selectedDist, setSelectedDist] = useState("");
   const [selectedCom, setSelectedCom] = useState("");
-  const [formFokontany, setFormFokontany] = useState("");
+  const [selectedFok, setSelectedFok] = useState("");
 
   // Fikarohana (Search Filter)
   const [searchQuery, setSearchQuery] = useState("");
@@ -977,7 +977,7 @@ export default function WebDashboard() {
         date_duplicata: formDateDuplicata,
         date_naissance: formDateNaissance,
         district: selectedDist,
-        fokontany: formFokontany,
+        fokontany: selectedFok,
         genre: formGenre,
         lieu_delivrance: formLieuDelivrance,
         lieu_duplicata: formLieuDuplicata,
@@ -1045,7 +1045,7 @@ export default function WebDashboard() {
       setSelectedReg(member.region || "");
       setSelectedDist(member.district || "");
       setSelectedCom(member.commune || "");
-      setFormFokontany(member.fokontany || "");
+      setSelectedFok(member.fokontany || "");
       setIsEditMode(true);
       setCurrentTab("adhesion");
     };
@@ -1073,7 +1073,7 @@ export default function WebDashboard() {
       setSelectedReg(""); 
       setSelectedDist(""); 
       setSelectedCom(""); 
-      setFormFokontany("");
+      setSelectedFok("");
     };
 
   // =========================================================================
@@ -2503,7 +2503,7 @@ const exportEnquetePDF = (enquete) => {
                 {/* ================= TOERANA MONINA (DROPDOWN SELECT) ================= */}
                 <View style={styles.formGroupWeb}>
                   <Text style={styles.webLabel}>Faritany (Province)</Text>
-                  <select style={styles.webSelectStyle} value={selectedProv} onChange={(e) => { setSelectedProv(e.target.value); setSelectedReg(""); setSelectedDist(""); setSelectedCom(""); }}>
+                  <select style={styles.webSelectStyle} value={selectedProv} onChange={(e) => { setSelectedProv(e.target.value); setSelectedReg(""); setSelectedDist(""); setSelectedCom(""); setSelectedFok(""); }}>
                     <option value="">-- Safidio Faritany --</option>
                     {Object.keys(madagascarData).map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
@@ -2529,13 +2529,16 @@ const exportEnquetePDF = (enquete) => {
                   <Text style={styles.webLabel}>Kaominina (Commune)</Text>
                   <select style={styles.webSelectStyle} value={selectedCom} onChange={(e) => setSelectedCom(e.target.value)}>
                     <option value="">-- Safidio Kaominina --</option>
-                    {selectedProv && selectedReg && selectedDist && madagascarData[selectedProv][selectedReg][selectedDist].map(c => <option key={c} value={c}>{c}</option>)}
+                    {selectedProv && selectedReg && selectedDist && Object.keys(madagascarData[selectedProv][selectedReg][selectedDist]).map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </View>
 
                 <View style={styles.formGroupWeb}>
                   <Text style={styles.webLabel}>Fokontany</Text>
-                  <TextInput style={styles.webInput} placeholder="Anaran'ny fokontany..." value={formFokontany} onChangeText={setFormFokontany} />
+                  <select style={styles.webSelectStyle} value={selectedFok} onChange={(e) => setSelectedFok(e.target.value)}>
+                    <option value="">-- Safidio Fokontany --</option>
+                    {selectedProv && selectedReg && selectedDist && selectedCom && madagascarData[selectedProv][selectedReg][selectedDist][selectedCom].map(f => <option key={f} value={f}>{f}</option>)}
+                  </select>
                 </View>
 
               </View>
