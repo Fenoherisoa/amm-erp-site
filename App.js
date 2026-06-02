@@ -648,7 +648,8 @@ export default function WebDashboard() {
   const handleLogin = async () => {
     setIsAuthLoading(true);
     if (!loginUser || !loginPass) { 
-      alert("Fenoy ny Username sy Password!"); 
+      alert("Fenoy ny Username sy Password!");
+      setIsAuthLoading(false); 
       return; 
     }
 
@@ -692,7 +693,7 @@ export default function WebDashboard() {
 
   const handleSelfRegister = async () => {
     setIsAuthLoading(true);
-    if (!regUser || !regPass || !regToken) { alert("Fenoy avokoa ny banga rehetra!"); return; }
+    if (!regUser || !regPass || !regToken) { alert("Fenoy avokoa ny banga rehetra!"); setIsAuthLoading(false); return; }
     try {
       const resTokens = await fetch(`${BASE_URL}/token_pool.json`);
       const dataTokens = await resTokens.json() || {};
@@ -1109,8 +1110,6 @@ export default function WebDashboard() {
       try {
         setIsLoading(true);
         
-        // 1. Fetch Members
-        const membersData = await getMembersFromAPI();
         // Raha ny rafitra dia "olona": { "AT-001": {...} }
         const data = membersData?.olona || membersData || {};
         const membersArray = Object.keys(data).map(key => ({
@@ -2309,8 +2308,11 @@ const exportEnquetePDF = (enquete) => {
         </ScrollView>
 
           {/* Logout */}
-          <TouchableOpacity style={styles.logoutBtn} onPress={() => setIsLoggedIn(false)}>
-            <Text style={{ color: '#ff4d4d', fontWeight: 'bold' }}> 🚪 MIVOAKA NY RAFITRA</Text>
+          <TouchableOpacity style={styles.logoutBtn} onPress={() => {
+           setLoginUser(''),
+           setLoginPass(''),
+           setIsLoggedIn(false)}}>
+            <Text style={{ color: '#ff4d4d', fontWeight: 'bold' }}> 🚪 LOGOUT</Text>
           </TouchableOpacity>
         </View>
       )}
