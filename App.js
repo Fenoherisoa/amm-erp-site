@@ -682,7 +682,8 @@ export default function WebDashboard() {
       } else {
         // Ity no tena zava-dehibe: raha diso ny password
         alert("Diso ny Username na Password!");
-        setIsLoggedIn(false); // Fiarovana fanampiny
+        setIsLoggedIn(false);
+        setIsAuthLoading(false); // Fiarovana fanampiny
       }
     } catch (e) {
       console.error("Login Error:", e);
